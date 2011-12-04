@@ -172,7 +172,7 @@ public class SelectorManager implements Runnable {
                 processEvents();
 
                 try {
-                    int selected = selector.select(SELECTOR_POLL_MS);
+                    int selected = selector.selectNow();
 
                     if(isClosed.get()) {
                         if(logger.isInfoEnabled())

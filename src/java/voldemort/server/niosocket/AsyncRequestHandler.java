@@ -24,6 +24,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.log4j.Level;
 
@@ -59,12 +61,18 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
 
     private StreamRequestHandler streamRequestHandler;
 
+    private NioSelectorManager manager;
+
+    private Future<StreamRequestHandler> asyncStoreRequest;
+
     public AsyncRequestHandler(Selector selector,
                                SocketChannel socketChannel,
                                RequestHandlerFactory requestHandlerFactory,
-                               int socketBufferSize) {
+                               int socketBufferSize,
+                               NioSelectorManager manager) {
         super(selector, socketChannel, socketBufferSize);
         this.requestHandlerFactory = requestHandlerFactory;
+        this.manager = manager;
     }
 
     @Override
@@ -117,22 +125,15 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
         if(logger.isTraceEnabled())
             logger.trace("Starting execution for " + socketChannel.socket());
 
-        streamRequestHandler = requestHandler.handleRequest(new DataInputStream(inputStream),
-                                                            new DataOutputStream(outputStream));
+        selectionKey.interestOps(0);
+        AsyncStoreRequestTask asyncTask = new AsyncStoreRequestTask(new DataInputStream(inputStream),
+                                                                    new DataOutputStream(outputStream),
+                                                                    requestHandler);
+        asyncStoreRequest = manager.getAsyncStoreRequestExecutor().submit(asyncTask);
+        manager.addRequestHandler(this);
 
-        if(streamRequestHandler != null) {
-            // In the case of a StreamRequestHandler, we handle that separately
-            // (attempting to process multiple "segments").
-            handleStreamRequest(selectionKey);
-            return;
-        }
-
-        // At this point we've completed a full stand-alone request. So clear
-        // our input buffer and prepare for outputting back to the client.
         if(logger.isTraceEnabled())
-            logger.trace("Finished execution for " + socketChannel.socket());
-
-        prepForWrite(selectionKey);
+            logger.trace("Submitted execution for " + socketChannel.socket());
     }
 
     @Override
@@ -345,4 +346,39 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
         }
     }
 
+    public boolean completeAsyncRequest() {
+        // TODO 'cancelled' state need to be handled as well
+        if(asyncStoreRequest == null || !asyncStoreRequest.isDone()) {
+            return false;
+        }
+
+        try {
+            SelectionKey selectionKey = socketChannel.keyFor(selector);
+            StreamRequestHandler handler = asyncStoreRequest.get();
+            //TODO stream requests might take more understanding
+            if(handler != null) {
+                // In the case of a StreamRequestHandler, we handle that separately
+                // (attempting to process multiple "segments").
+                handleStreamRequest(selectionKey);
+                return true;
+            }
+            
+            // At this point we've completed a full stand-alone request. So clear
+            // our input buffer and prepare for outputting back to the client.
+            if(logger.isTraceEnabled())
+                logger.trace("Completed execution for " + socketChannel.socket());
+
+            prepForWrite(selectionKey);
+            asyncStoreRequest = null;
+
+        } catch(InterruptedException e) {
+            logger.warn("Execution interrupted for " + socketChannel.socket(), e);
+        } catch(ExecutionException e) {
+            logger.warn("Execution failed for " + socketChannel.socket(), e);
+        } catch(IOException e) {
+            logger.warn("Execution failed for"+ socketChannel.socket(), e);
+        }
+
+        return true;
+    }
 }
