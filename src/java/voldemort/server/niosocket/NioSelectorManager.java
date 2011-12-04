@@ -20,8 +20,13 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.log4j.Level;
 
@@ -99,6 +104,10 @@ public class NioSelectorManager extends SelectorManager {
 
     private final int socketBufferSize;
 
+    private final List<AsyncRequestHandler> requestHandlers;
+
+    private final ExecutorService asyncStoreRequestExecutor;
+
     public NioSelectorManager(InetSocketAddress endpoint,
                               RequestHandlerFactory requestHandlerFactory,
                               int socketBufferSize) {
@@ -106,6 +115,9 @@ public class NioSelectorManager extends SelectorManager {
         this.socketChannelQueue = new ConcurrentLinkedQueue<SocketChannel>();
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
+        requestHandlers = new LinkedList<AsyncRequestHandler>();
+        //TODO make this configurable
+        asyncStoreRequestExecutor = Executors.newFixedThreadPool(4);
     }
 
     public void accept(SocketChannel socketChannel) {
@@ -155,8 +167,8 @@ public class NioSelectorManager extends SelectorManager {
                     AsyncRequestHandler attachment = new AsyncRequestHandler(selector,
                                                                              socketChannel,
                                                                              requestHandlerFactory,
-                                                                             socketBufferSize);
-
+                                                                             socketBufferSize,
+                                                                             this);
                     if(!isClosed.get())
                         socketChannel.register(selector, SelectionKey.OP_READ, attachment);
                 } catch(ClosedSelectorException e) {
@@ -171,10 +183,26 @@ public class NioSelectorManager extends SelectorManager {
                         logger.error(e.getMessage(), e);
                 }
             }
+
+            // Process all the async requests that were submitted previously
+            Iterator<AsyncRequestHandler> handlerItr = requestHandlers.iterator();
+            while(handlerItr.hasNext()) {
+                AsyncRequestHandler requestHandler = handlerItr.next();
+                if(requestHandler.completeAsyncRequest()) {
+                    handlerItr.remove();
+                }
+            }
         } catch(Exception e) {
             if(logger.isEnabledFor(Level.ERROR))
                 logger.error(e.getMessage(), e);
         }
     }
 
+    public void addRequestHandler(AsyncRequestHandler worker) {
+        requestHandlers.add(worker);
+    }
+
+    public ExecutorService getAsyncStoreRequestExecutor() {
+        return asyncStoreRequestExecutor;
+    }
 }
