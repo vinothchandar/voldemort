@@ -354,6 +354,7 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
 
         try {
             SelectionKey selectionKey = socketChannel.keyFor(selector);
+
             streamRequestHandler = asyncStoreRequest.get();
             // TODO stream requests might take more understanding
             if(streamRequestHandler != null) {
