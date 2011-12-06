@@ -358,21 +358,19 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
             // TODO stream requests might take more understanding
             if(streamRequestHandler != null) {
                 // In the case of a StreamRequestHandler, we handle that
-                // separately
-                // (attempting to process multiple "segments").
+                // separately (attempting to process multiple "segments").
                 handleStreamRequest(selectionKey);
                 return true;
             }
 
             // At this point we've completed a full stand-alone request. So
-            // clear
-            // our input buffer and prepare for outputting back to the client.
+            // clear our input buffer and prepare for outputting back to the
+            // client.
             if(logger.isTraceEnabled())
                 logger.trace("Completed execution for " + socketChannel.socket());
 
             prepForWrite(selectionKey);
             asyncStoreRequest = null;
-
         } catch(InterruptedException e) {
             logger.warn("Execution interrupted for " + socketChannel.socket(), e);
         } catch(ExecutionException e) {

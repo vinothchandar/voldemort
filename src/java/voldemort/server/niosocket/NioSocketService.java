@@ -77,6 +77,8 @@ public class NioSocketService extends AbstractSocketService {
 
     private final Logger logger = Logger.getLogger(getClass());
 
+    private final ExecutorService asyncIOExecutor;
+
     public NioSocketService(RequestHandlerFactory requestHandlerFactory,
                             int port,
                             int socketBufferSize,
@@ -98,6 +100,9 @@ public class NioSocketService extends AbstractSocketService {
         this.selectorManagers = new NioSelectorManager[selectors];
         this.selectorManagerThreadPool = Executors.newFixedThreadPool(selectorManagers.length,
                                                                       new DaemonThreadFactory("voldemort-niosocket-server"));
+        // TODO make this its own config parameter.
+        this.asyncIOExecutor = Executors.newFixedThreadPool(selectorManagers.length,
+                                                            new DaemonThreadFactory("voldemort-niosocket-ioworker"));
         this.statusManager = new StatusManager((ThreadPoolExecutor) this.selectorManagerThreadPool);
         this.acceptorThread = new Thread(new Acceptor(), "NioSocketService.Acceptor");
     }
@@ -117,7 +122,8 @@ public class NioSocketService extends AbstractSocketService {
             for(int i = 0; i < selectorManagers.length; i++) {
                 selectorManagers[i] = new NioSelectorManager(endpoint,
                                                              requestHandlerFactory,
-                                                             socketBufferSize);
+                                                             socketBufferSize,
+                                                             asyncIOExecutor);
                 selectorManagerThreadPool.execute(selectorManagers[i]);
             }
 

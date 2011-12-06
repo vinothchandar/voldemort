@@ -172,7 +172,8 @@ public class SelectorManager implements Runnable {
                 processEvents();
 
                 try {
-                    int selected = selector.selectNow();
+
+                    int selected = selector.select(getSelectorPollTimeout());
 
                     if(isClosed.get()) {
                         if(logger.isInfoEnabled())
@@ -217,4 +218,7 @@ public class SelectorManager implements Runnable {
         }
     }
 
+    public int getSelectorPollTimeout() {
+        return SELECTOR_POLL_MS;
+    }
 }

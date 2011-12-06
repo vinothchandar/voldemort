@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.log4j.Level;
 
@@ -96,6 +95,8 @@ import voldemort.utils.SelectorManager;
 
 public class NioSelectorManager extends SelectorManager {
 
+    public static final int NIO_SELECTOR_POLL_MS = 1;
+
     private final InetSocketAddress endpoint;
 
     private final Queue<SocketChannel> socketChannelQueue;
@@ -110,14 +111,14 @@ public class NioSelectorManager extends SelectorManager {
 
     public NioSelectorManager(InetSocketAddress endpoint,
                               RequestHandlerFactory requestHandlerFactory,
-                              int socketBufferSize) {
+                              int socketBufferSize,
+                              ExecutorService executorService) {
         this.endpoint = endpoint;
         this.socketChannelQueue = new ConcurrentLinkedQueue<SocketChannel>();
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
-        requestHandlers = new LinkedList<AsyncRequestHandler>();
-        //TODO make this configurable
-        asyncStoreRequestExecutor = Executors.newFixedThreadPool(4);
+        this.requestHandlers = new LinkedList<AsyncRequestHandler>();
+        this.asyncStoreRequestExecutor = executorService;
     }
 
     public void accept(SocketChannel socketChannel) {
@@ -204,5 +205,10 @@ public class NioSelectorManager extends SelectorManager {
 
     public ExecutorService getAsyncStoreRequestExecutor() {
         return asyncStoreRequestExecutor;
+    }
+
+    @Override
+    public int getSelectorPollTimeout() {
+        return NIO_SELECTOR_POLL_MS;
     }
 }
