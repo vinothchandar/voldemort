@@ -43,4 +43,11 @@ public abstract class AbstractRequestHandler implements RequestHandler {
 
         throw new VoldemortException("Unhandled RoutingType found:" + type);
     }
+
+    /**
+     * Async processing is enabled only for non streaming requests.
+     */
+    public boolean isAsync() {
+        return true;
+    }
 }

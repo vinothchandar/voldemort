@@ -186,11 +186,15 @@ public class NioSelectorManager extends SelectorManager {
             }
 
             // Process all the async requests that were submitted previously
-            Iterator<AsyncRequestHandler> handlerItr = requestHandlers.iterator();
-            while(handlerItr.hasNext()) {
-                AsyncRequestHandler requestHandler = handlerItr.next();
-                if(requestHandler.completeAsyncRequest()) {
-                    handlerItr.remove();
+            if(requestHandlers.size() > 0) {
+                Iterator<AsyncRequestHandler> handlerItr = requestHandlers.iterator();
+                while(handlerItr.hasNext()) {
+                    AsyncRequestHandler requestHandler = handlerItr.next();
+                    if(requestHandler.completeAsyncRequest()) {
+                        // if complete, remove the worker from the list so we
+                        // can process the channel again
+                        handlerItr.remove();
+                    }
                 }
             }
         } catch(Exception e) {
@@ -199,16 +203,36 @@ public class NioSelectorManager extends SelectorManager {
         }
     }
 
+    /**
+     * Called by the worker, to mark the submission of a request for async
+     * processing
+     * 
+     * @param worker
+     */
     public void addRequestHandler(AsyncRequestHandler worker) {
         requestHandlers.add(worker);
     }
 
+    /**
+     * Return the executor pool shared by all selector managers
+     * 
+     * @return
+     */
     public ExecutorService getAsyncStoreRequestExecutor() {
         return asyncStoreRequestExecutor;
     }
 
+    /**
+     * Return the timeout for the select() call
+     */
     @Override
     public int getSelectorPollTimeout() {
-        return NIO_SELECTOR_POLL_MS;
+        // if there are pending async request, then return out from
+        // select right away. else, wait longer. This attempts to
+        // help the selector manager from going crazy if it has no work
+        if(requestHandlers.size() > 0)
+            return NIO_SELECTOR_POLL_MS;
+        else
+            return SELECTOR_POLL_MS;
     }
 }

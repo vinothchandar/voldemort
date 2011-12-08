@@ -58,4 +58,11 @@ public interface RequestHandler {
 
     public boolean isCompleteRequest(ByteBuffer buffer);
 
+    /**
+     * Returns if the request can be processed asynchronously
+     * 
+     * @return
+     */
+    public boolean isAsync();
+
 }

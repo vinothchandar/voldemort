@@ -141,6 +141,13 @@ public class AdminServiceRequestHandler implements RequestHandler {
         }
     }
 
+    /**
+     * Async processing is disabled for admin client
+     */
+    public boolean isAsync() {
+        return false;
+    }
+
     public StreamRequestHandler handleRequest(final DataInputStream inputStream,
                                               final DataOutputStream outputStream)
             throws IOException {

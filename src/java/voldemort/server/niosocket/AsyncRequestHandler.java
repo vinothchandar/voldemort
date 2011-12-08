@@ -21,10 +21,13 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.log4j.Level;
@@ -64,6 +67,8 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
     private NioSelectorManager manager;
 
     private Future<StreamRequestHandler> asyncStoreRequest;
+
+    private SelectionKey selectionKey;
 
     public AsyncRequestHandler(Selector selector,
                                SocketChannel socketChannel,
@@ -125,15 +130,41 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
         if(logger.isTraceEnabled())
             logger.trace("Starting execution for " + socketChannel.socket());
 
-        selectionKey.interestOps(0);
-        AsyncStoreRequestTask asyncTask = new AsyncStoreRequestTask(new DataInputStream(inputStream),
-                                                                    new DataOutputStream(outputStream),
-                                                                    requestHandler);
-        asyncStoreRequest = manager.getAsyncStoreRequestExecutor().submit(asyncTask);
-        manager.addRequestHandler(this);
+        // async processing is only supported for non streaming requests
+        ExecutorService executor = manager.getAsyncStoreRequestExecutor();
+        if(requestHandler.isAsync() && executor != null) {
+            // turn off the interest ops so the manager won't select the channel
+            // during the time the request is processed in the background
+            selectionKey.interestOps(0);
+            // schedule the task
+            AsyncStoreRequestTask asyncTask = new AsyncStoreRequestTask(new DataInputStream(inputStream),
+                                                                        new DataOutputStream(outputStream),
+                                                                        requestHandler);
+            asyncStoreRequest = manager.getAsyncStoreRequestExecutor().submit(asyncTask);
+            // let the manager know, so it can check for completion
+            manager.addRequestHandler(this);
+            // save up the selection key
+            this.selectionKey = selectionKey;
 
-        if(logger.isTraceEnabled())
-            logger.trace("Submitted execution for " + socketChannel.socket());
+            if(logger.isTraceEnabled())
+                logger.trace("Submitted async execution for " + socketChannel.socket());
+        } else {
+            streamRequestHandler = requestHandler.handleRequest(new DataInputStream(inputStream),
+                                                                new DataOutputStream(outputStream));
+
+            if(streamRequestHandler != null) {
+                // In the case of a StreamRequestHandler, we handle that
+                // separately (attempting to process multiple "segments").
+                handleStreamRequest(selectionKey);
+                return;
+            }
+            // At this point we've completed a full stand-alone request. So
+            // clear our input buffer and prepare for outputting back to the
+            // client.
+            if(logger.isTraceEnabled())
+                logger.trace("Finished execution for " + socketChannel.socket());
+            prepForWrite(selectionKey);
+        }
     }
 
     @Override
@@ -346,23 +377,25 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
         }
     }
 
+    /**
+     * Checks if the scheduled async store request task completed and re enables
+     * the channel for processing.
+     * 
+     * @return true if the computation completed, one way or other
+     */
     public boolean completeAsyncRequest() {
-        // TODO 'cancelled' state need to be handled as well
-        if(asyncStoreRequest == null || !asyncStoreRequest.isDone()) {
+        // Check if the pending request completed
+        if(!asyncStoreRequest.isDone()) {
             return false;
         }
 
         try {
-            SelectionKey selectionKey = socketChannel.keyFor(selector);
-
+            // Obtain the result. This is guaranteed to be null since we don't
+            // handle streaming requests yet. Output for the client, is sitting
+            // in the output buffer. (including exceptions)
             streamRequestHandler = asyncStoreRequest.get();
-            // TODO stream requests might take more understanding
-            if(streamRequestHandler != null) {
-                // In the case of a StreamRequestHandler, we handle that
-                // separately (attempting to process multiple "segments").
-                handleStreamRequest(selectionKey);
-                return true;
-            }
+            // TODO this can be removed post integration tests
+            assert (streamRequestHandler == null);
 
             // At this point we've completed a full stand-alone request. So
             // clear our input buffer and prepare for outputting back to the
@@ -372,12 +405,20 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
 
             prepForWrite(selectionKey);
             asyncStoreRequest = null;
+            selectionKey = null;
         } catch(InterruptedException e) {
-            logger.warn("Execution interrupted for " + socketChannel.socket(), e);
+            logger.info("Execution interrupted for " + socketChannel.socket(), e);
+            close();
         } catch(ExecutionException e) {
-            logger.warn("Execution failed for " + socketChannel.socket(), e);
-        } catch(IOException e) {
-            logger.warn("Execution failed for" + socketChannel.socket(), e);
+            logger.info("Execution failed for " + socketChannel.socket() + " reason:", e.getCause());
+            close();
+        } catch(CancellationException e) {
+            logger.info("Execution cancelled for " + socketChannel.socket(), e);
+            close();
+        } catch(CancelledKeyException e) {
+            logger.info("Selection key cancelled, with message " + e.getMessage() + " on socket "
+                        + socketChannel.socket());
+            close();
         }
 
         return true;

@@ -100,6 +100,11 @@ public class VoldemortConfig implements Serializable {
     private boolean useNioConnector;
     private int nioConnectorSelectors;
     private int nioAdminConnectorSelectors;
+    /**
+     * Number of IO worker tasks to use in NIO mode, to parallelize on network
+     * and disk.
+     */
+    private int nioAsyncIOWorkers;
 
     private int clientSelectors;
     private int clientRoutingTimeoutMs;
@@ -252,6 +257,7 @@ public class VoldemortConfig implements Serializable {
         this.nioAdminConnectorSelectors = props.getInt("nio.admin.connector.selectors",
                                                        Math.max(8, Runtime.getRuntime()
                                                                           .availableProcessors()));
+        this.nioAsyncIOWorkers = props.getInt("nio.connector.ioworkers", 8);
 
         this.clientSelectors = props.getInt("client.selectors", 4);
         this.clientMaxConnectionsPerNode = props.getInt("client.max.connections.per.node", 50);
@@ -1168,6 +1174,14 @@ public class VoldemortConfig implements Serializable {
 
     public void setNioConnectorSelectors(int nioConnectorSelectors) {
         this.nioConnectorSelectors = nioConnectorSelectors;
+    }
+
+    public int getNioAsyncIOWorkers() {
+        return nioAsyncIOWorkers;
+    }
+
+    public void setNioAsyncIOWorkers(int nioAsyncIOWorkers) {
+        this.nioAsyncIOWorkers = nioAsyncIOWorkers;
     }
 
     public int getNioAdminConnectorSelectors() {

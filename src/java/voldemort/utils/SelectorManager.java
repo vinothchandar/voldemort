@@ -218,6 +218,11 @@ public class SelectorManager implements Runnable {
         }
     }
 
+    /**
+     * Return the timeout for the select() operation
+     * 
+     * @return
+     */
     public int getSelectorPollTimeout() {
         return SELECTOR_POLL_MS;
     }

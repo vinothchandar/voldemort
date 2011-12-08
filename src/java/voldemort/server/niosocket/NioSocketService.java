@@ -84,7 +84,8 @@ public class NioSocketService extends AbstractSocketService {
                             int socketBufferSize,
                             int selectors,
                             String serviceName,
-                            boolean enableJmx) {
+                            boolean enableJmx,
+                            int ioworkers) {
         super(ServiceType.SOCKET, port, serviceName, enableJmx);
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
@@ -100,9 +101,11 @@ public class NioSocketService extends AbstractSocketService {
         this.selectorManagers = new NioSelectorManager[selectors];
         this.selectorManagerThreadPool = Executors.newFixedThreadPool(selectorManagers.length,
                                                                       new DaemonThreadFactory("voldemort-niosocket-server"));
-        // TODO make this its own config parameter.
-        this.asyncIOExecutor = Executors.newFixedThreadPool(selectorManagers.length,
-                                                            new DaemonThreadFactory("voldemort-niosocket-ioworker"));
+        if(ioworkers > 0)
+            this.asyncIOExecutor = Executors.newFixedThreadPool(ioworkers,
+                                                                new DaemonThreadFactory("voldemort-niosocket-ioworker"));
+        else
+            this.asyncIOExecutor = null;
         this.statusManager = new StatusManager((ThreadPoolExecutor) this.selectorManagerThreadPool);
         this.acceptorThread = new Thread(new Acceptor(), "NioSocketService.Acceptor");
     }
@@ -243,9 +246,15 @@ public class NioSocketService extends AbstractSocketService {
                         continue;
                     }
 
-                    NioSelectorManager selectorManager = selectorManagers[counter.getAndIncrement()
-                                                                          % selectorManagers.length];
+                    int selectorManagerIndex = counter.getAndIncrement() % selectorManagers.length;
+                    NioSelectorManager selectorManager = selectorManagers[selectorManagerIndex];
                     selectorManager.accept(socketChannel);
+
+                    if(logger.isTraceEnabled()) {
+                        logger.trace("Connection accepted :" + socketChannel
+                                     + ", handing off to selector manager" + selectorManagerIndex);
+                    }
+
                 } catch(ClosedByInterruptException e) {
                     // If you're *really* interested...
                     if(logger.isTraceEnabled())
