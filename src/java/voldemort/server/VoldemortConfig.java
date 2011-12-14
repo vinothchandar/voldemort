@@ -101,10 +101,12 @@ public class VoldemortConfig implements Serializable {
     private int nioConnectorSelectors;
     private int nioAdminConnectorSelectors;
     /**
-     * Number of IO worker tasks to use in NIO mode, to parallelize on network
-     * and disk.
+     * Thread pool parameters for IO worker tasks in NIO mode, to parallelize on
+     * network and disk.
      */
-    private int nioAsyncIOWorkers;
+    private int coreAsyncIoWorkers;
+    private int maxAsyncIoWorkers;
+    private int maxQueuedAsyncIoRequests;
 
     private int clientSelectors;
     private int clientRoutingTimeoutMs;
@@ -257,7 +259,10 @@ public class VoldemortConfig implements Serializable {
         this.nioAdminConnectorSelectors = props.getInt("nio.admin.connector.selectors",
                                                        Math.max(8, Runtime.getRuntime()
                                                                           .availableProcessors()));
-        this.nioAsyncIOWorkers = props.getInt("nio.connector.ioworkers", 8);
+
+        this.coreAsyncIoWorkers = props.getInt("nio.connector.core.ioworkers", 8);
+        this.maxAsyncIoWorkers = props.getInt("nio.connector.max.ioworkers", 16);
+        this.maxQueuedAsyncIoRequests = props.getInt("nio.connector.max.ioqueue", 8);
 
         this.clientSelectors = props.getInt("client.selectors", 4);
         this.clientMaxConnectionsPerNode = props.getInt("client.max.connections.per.node", 50);
@@ -1176,12 +1181,28 @@ public class VoldemortConfig implements Serializable {
         this.nioConnectorSelectors = nioConnectorSelectors;
     }
 
-    public int getNioAsyncIOWorkers() {
-        return nioAsyncIOWorkers;
+    public int getCoreAsyncIoWorkers() {
+        return this.coreAsyncIoWorkers;
     }
 
-    public void setNioAsyncIOWorkers(int nioAsyncIOWorkers) {
-        this.nioAsyncIOWorkers = nioAsyncIOWorkers;
+    public void setCoreAsyncIoWorkers(int coreAsyncIoWorkers) {
+        this.coreAsyncIoWorkers = coreAsyncIoWorkers;
+    }
+
+    public int getMaxAsyncIoWorkers() {
+        return this.maxAsyncIoWorkers;
+    }
+
+    public void setMaxAsyncIoWorkers(int maxAsyncIoWorkers) {
+        this.maxAsyncIoWorkers = maxAsyncIoWorkers;
+    }
+
+    public int getMaxQueuedAsyncIoRequests() {
+        return this.maxQueuedAsyncIoRequests;
+    }
+
+    public void setMaxQueuedAsyncIoRequests(int maxQueuedAsyncIoRequests) {
+        this.maxQueuedAsyncIoRequests = maxQueuedAsyncIoRequests;
     }
 
     public int getNioAdminConnectorSelectors() {

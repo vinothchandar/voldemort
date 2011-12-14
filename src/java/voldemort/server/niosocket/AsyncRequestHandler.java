@@ -394,8 +394,6 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
             // handle streaming requests yet. Output for the client, is sitting
             // in the output buffer. (including exceptions)
             streamRequestHandler = asyncStoreRequest.get();
-            // TODO this can be removed post integration tests
-            assert (streamRequestHandler == null);
 
             // At this point we've completed a full stand-alone request. So
             // clear our input buffer and prepare for outputting back to the
@@ -417,7 +415,7 @@ public class AsyncRequestHandler extends SelectorManagerWorker {
             close();
         } catch(CancelledKeyException e) {
             logger.info("Selection key cancelled, with message " + e.getMessage() + " on socket "
-                        + socketChannel.socket());
+                        + socketChannel.socket(), e);
             close();
         }
 

@@ -182,7 +182,9 @@ public class VoldemortServer extends AbstractService {
                                                   voldemortConfig.getNioConnectorSelectors(),
                                                   "nio-socket-server",
                                                   voldemortConfig.isJmxEnabled(),
-                                                  voldemortConfig.getNioAsyncIOWorkers()));
+                                                  voldemortConfig.getCoreAsyncIoWorkers(),
+                                                  voldemortConfig.getMaxAsyncIoWorkers(),
+                                                  voldemortConfig.getMaxQueuedAsyncIoRequests()));
             } else {
                 logger.info("Using BIO Connector.");
                 services.add(new SocketService(socketRequestHandlerFactory,
@@ -216,13 +218,17 @@ public class VoldemortServer extends AbstractService {
 
             if(voldemortConfig.getUseNioConnector()) {
                 logger.info("Using NIO Connector for Admin Service.");
+                // passing zero for io worker thread pool, since admin service
+                // wont do async io
                 services.add(new NioSocketService(adminRequestHandlerFactory,
                                                   identityNode.getAdminPort(),
                                                   voldemortConfig.getAdminSocketBufferSize(),
                                                   voldemortConfig.getNioAdminConnectorSelectors(),
                                                   "admin-server",
                                                   voldemortConfig.isJmxEnabled(),
-                                                  voldemortConfig.getNioAsyncIOWorkers()));
+                                                  0,
+                                                  0,
+                                                  0));
             } else {
                 logger.info("Using BIO Connector for Admin Service.");
                 services.add(new SocketService(adminRequestHandlerFactory,

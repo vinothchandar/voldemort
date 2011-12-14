@@ -85,7 +85,9 @@ public class NioSocketService extends AbstractSocketService {
                             int selectors,
                             String serviceName,
                             boolean enableJmx,
-                            int ioworkers) {
+                            int coreIoWorkers,
+                            int maxIoWorkers,
+                            int maxQueuedIoRequests) {
         super(ServiceType.SOCKET, port, serviceName, enableJmx);
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
@@ -101,11 +103,13 @@ public class NioSocketService extends AbstractSocketService {
         this.selectorManagers = new NioSelectorManager[selectors];
         this.selectorManagerThreadPool = Executors.newFixedThreadPool(selectorManagers.length,
                                                                       new DaemonThreadFactory("voldemort-niosocket-server"));
-        if(ioworkers > 0)
-            this.asyncIOExecutor = Executors.newFixedThreadPool(ioworkers,
-                                                                new DaemonThreadFactory("voldemort-niosocket-ioworker"));
-        else
+        if(coreIoWorkers > 0) {
+            this.asyncIOExecutor = new AsyncStoreThreadPool(coreIoWorkers,
+                                                            maxIoWorkers,
+                                                            maxQueuedIoRequests);
+        } else {
             this.asyncIOExecutor = null;
+        }
         this.statusManager = new StatusManager((ThreadPoolExecutor) this.selectorManagerThreadPool);
         this.acceptorThread = new Thread(new Acceptor(), "NioSocketService.Acceptor");
     }
@@ -200,6 +204,25 @@ public class NioSocketService extends AbstractSocketService {
                     logger.warn("SelectorManager thread pool did not stop cleanly after "
                                 + SHUTDOWN_TIMEOUT_MS + " ms");
             }
+
+            // Shut down the async io thread pool, if we are using one
+            if(asyncIOExecutor != null) {
+                asyncIOExecutor.shutdown();
+
+                if(logger.isTraceEnabled())
+                    logger.trace("Shut down Async IO thread pool, waiting " + SHUTDOWN_TIMEOUT_MS
+                                 + " ms for termination");
+
+                terminated = asyncIOExecutor.awaitTermination(SHUTDOWN_TIMEOUT_MS,
+                                                              TimeUnit.MILLISECONDS);
+
+                if(!terminated) {
+                    if(logger.isEnabledFor(Level.WARN))
+                        logger.warn("Async IO thread pool did not stop cleanly after "
+                                    + SHUTDOWN_TIMEOUT_MS + " ms");
+                }
+            }
+
         } catch(Exception e) {
             if(logger.isEnabledFor(Level.WARN))
                 logger.warn(e.getMessage(), e);

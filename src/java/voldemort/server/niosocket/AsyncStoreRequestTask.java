@@ -11,7 +11,6 @@ import voldemort.server.protocol.StreamRequestHandler;
  * Asynchronous store request to parallelize on the disk IO, once the network IO
  * has completed.
  * 
- * @author vchandar
  */
 public class AsyncStoreRequestTask implements Callable<StreamRequestHandler> {
 

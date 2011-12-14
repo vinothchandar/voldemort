@@ -108,15 +108,15 @@ public abstract class SelectorManagerWorker implements Runnable {
             close();
         } catch(CancelledKeyException e) {
             logger.info("Selection key cancelled, with message " + e.getMessage() + " on socket "
-                        + socketChannel.socket());
+                        + socketChannel.socket(), e);
             close();
         } catch(EOFException e) {
-            logger.info("EOF on socket " + socketChannel.socket() + " with message "
-                        + e.getMessage());
+            logger.info("EOF on socket " + socketChannel.socket() + " with message"
+                        + e.getMessage(), e);
             close();
         } catch(IOException e) {
             logger.info("Connection reset from " + socketChannel.socket() + " with message - "
-                        + e.getMessage());
+                        + e.getMessage(), e);
             close();
         } catch(Throwable t) {
             if(logger.isEnabledFor(Level.ERROR))
