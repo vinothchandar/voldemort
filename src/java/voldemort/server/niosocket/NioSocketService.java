@@ -36,6 +36,7 @@ import voldemort.server.ServiceType;
 import voldemort.server.StatusManager;
 import voldemort.server.protocol.RequestHandlerFactory;
 import voldemort.utils.DaemonThreadFactory;
+import voldemort.utils.JmxUtils;
 
 /**
  * NioSocketService is an NIO-based socket service, comparable to the
@@ -107,6 +108,11 @@ public class NioSocketService extends AbstractSocketService {
             this.asyncIOExecutor = new AsyncStoreThreadPool(coreIoWorkers,
                                                             maxIoWorkers,
                                                             maxQueuedIoRequests);
+            if(enableJmx) {
+                JmxUtils.registerMbean(asyncIOExecutor,
+                                       JmxUtils.createObjectName(JmxUtils.getPackageName(asyncIOExecutor.getClass()),
+                                                                 JmxUtils.getClassName(asyncIOExecutor.getClass())));
+            }
         } else {
             this.asyncIOExecutor = null;
         }
