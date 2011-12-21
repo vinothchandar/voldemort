@@ -148,8 +148,7 @@ public class ServerTestUtils {
                                                  "client-request-service",
                                                  false,
                                                  coreConnections,
-                                                 2 * coreConnections,
-                                                 coreConnections);
+                                                 2 * coreConnections);
         } else {
             socketService = new SocketService(requestHandlerFactory,
                                               port,

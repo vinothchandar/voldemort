@@ -1,6 +1,6 @@
 package voldemort.server.niosocket;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -16,12 +16,12 @@ import voldemort.utils.DaemonThreadFactory;
 @JmxManaged(description = "Voldemort Server async store-worker thread")
 public class AsyncStoreThreadPool extends ThreadPoolExecutor {
 
-    public AsyncStoreThreadPool(int coreThreads, int maxThreads, int maxQueuedRequests) {
+    public AsyncStoreThreadPool(int coreThreads, int maxThreads) {
         super(coreThreads,
               maxThreads,
               0,
               TimeUnit.MILLISECONDS,
-              new LinkedBlockingQueue<Runnable>(maxQueuedRequests),
+              new SynchronousQueue<Runnable>(),
               new DaemonThreadFactory("voldemort-niosocket-ioworker"),
               new ThreadPoolExecutor.CallerRunsPolicy());
     }

@@ -87,8 +87,7 @@ public class NioSocketService extends AbstractSocketService {
                             String serviceName,
                             boolean enableJmx,
                             int coreIoWorkers,
-                            int maxIoWorkers,
-                            int maxQueuedIoRequests) {
+                            int maxIoWorkers) {
         super(ServiceType.SOCKET, port, serviceName, enableJmx);
         this.requestHandlerFactory = requestHandlerFactory;
         this.socketBufferSize = socketBufferSize;
@@ -105,9 +104,7 @@ public class NioSocketService extends AbstractSocketService {
         this.selectorManagerThreadPool = Executors.newFixedThreadPool(selectorManagers.length,
                                                                       new DaemonThreadFactory("voldemort-niosocket-server"));
         if(coreIoWorkers > 0) {
-            this.asyncIOExecutor = new AsyncStoreThreadPool(coreIoWorkers,
-                                                            maxIoWorkers,
-                                                            maxQueuedIoRequests);
+            this.asyncIOExecutor = new AsyncStoreThreadPool(coreIoWorkers, maxIoWorkers);
             if(enableJmx) {
                 JmxUtils.registerMbean(asyncIOExecutor,
                                        JmxUtils.createObjectName(JmxUtils.getPackageName(asyncIOExecutor.getClass()),
