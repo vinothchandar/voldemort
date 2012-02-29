@@ -18,7 +18,6 @@ package voldemort.store.bdb;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +60,6 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseStats;
 import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentStats;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.StatsConfig;
@@ -100,13 +98,16 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
     }
 
     private void dumpStats() {
+
         if(statconfig != null) {
-            long ts = System.currentTimeMillis();
-            if((ts - lastStatts) >= 5000) {
-                EnvironmentStats stats = environment.getStats(statconfig);
-                bdbStatFile.println("===\n" + new Date().toString() + " Status" + stats.toString());
-                lastStatts = ts;
-            }
+            return;
+            /*
+             * long ts = System.currentTimeMillis(); if((ts - lastStatts) >=
+             * 5000) { EnvironmentStats stats =
+             * environment.getStats(statconfig); bdbStatFile.println("===\n" +
+             * new Date().toString() + " Status" + stats.toString()); lastStatts
+             * = ts; }
+             */
         }
     }
 

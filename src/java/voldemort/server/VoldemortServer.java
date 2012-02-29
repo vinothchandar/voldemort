@@ -197,7 +197,7 @@ public class VoldemortServer extends AbstractService {
     private List<VoldemortService> createServices() {
 
         /* fill the heap */
-        heapFill(300);
+        // heapFill(300);
 
         /* Services are given in the order they must be started */
         List<VoldemortService> services = new ArrayList<VoldemortService>();
