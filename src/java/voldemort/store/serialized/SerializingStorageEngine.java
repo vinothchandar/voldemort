@@ -65,6 +65,10 @@ public class SerializingStorageEngine<K, V, T> extends SerializingStore<K, V, T>
         storageEngine.truncate();
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     private class KeysIterator implements ClosableIterator<K> {
 
         private final ClosableIterator<ByteArray> iterator;

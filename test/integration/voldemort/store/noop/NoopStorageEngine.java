@@ -65,6 +65,10 @@ public class NoopStorageEngine implements StorageEngine<ByteArray, byte[], byte[
 
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public List<Versioned<byte[]>> get(ByteArray key, byte[] transforms) throws VoldemortException {
         return dataList;
     }

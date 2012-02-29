@@ -66,6 +66,10 @@ public class ViewStorageEngine implements StorageEngine<ByteArray, byte[], byte[
             throw new IllegalArgumentException("View without either a key transformation or a value transformation.");
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     private List<Versioned<byte[]>> inflateValues(List<Versioned<byte[]>> result) {
         List<Versioned<byte[]>> inflated = new ArrayList<Versioned<byte[]>>(result.size());
         for(Versioned<byte[]> item: result) {
@@ -212,8 +216,8 @@ public class ViewStorageEngine implements StorageEngine<ByteArray, byte[], byte[
             Pair<ByteArray, Versioned<byte[]>> p = inner.next();
             Versioned<byte[]> newVal = Versioned.value(valueToViewSchema(p.getFirst(),
                                                                          p.getSecond().getValue(),
-                                                                         null), p.getSecond()
-                                                                                 .getVersion());
+                                                                         null),
+                                                       p.getSecond().getVersion());
             return Pair.create(p.getFirst(), newVal);
         }
     }

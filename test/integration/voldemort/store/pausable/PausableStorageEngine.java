@@ -47,6 +47,10 @@ public class PausableStorageEngine<K, V, T> implements StorageEngine<K, V, T> {
         return inner.delete(key);
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     private void blockIfNecessary() {
         synchronized(condition) {
             while(paused) {

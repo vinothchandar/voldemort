@@ -1,16 +1,16 @@
 package voldemort.store.bdb.stats;
 
+import java.util.concurrent.Callable;
 
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.EnvironmentStats;
-import com.sleepycat.je.StatsConfig;
 import voldemort.VoldemortException;
 import voldemort.annotations.Experimental;
 import voldemort.annotations.jmx.JmxGetter;
 import voldemort.utils.CachedCallable;
 
-import java.util.concurrent.Callable;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.EnvironmentStats;
+import com.sleepycat.je.StatsConfig;
 
 public class BdbEnvironmentStats {
 
@@ -159,13 +159,13 @@ public class BdbEnvironmentStats {
 
     @JmxGetter(name = "PercentRandomWrites")
     public double getPercentRandomWrites() {
-       return safeGetPercentage(getNumRandomWrites(), getNumWritesTotal());
+        return safeGetPercentage(getNumRandomWrites(), getNumWritesTotal());
     }
 
     @JmxGetter(name = "PercentageRandomWriteBytes")
     public double getPercentageRandomWriteBytes() {
-        return safeGetPercentage(getNumRandomWriteBytes(), getNumRandomWriteBytes() +
-                                                           getNumSequentialWriteBytes());
+        return safeGetPercentage(getNumRandomWriteBytes(), getNumRandomWriteBytes()
+                                                           + getNumSequentialWriteBytes());
     }
 
     @JmxGetter(name = "NumReadsTotal")
@@ -180,8 +180,8 @@ public class BdbEnvironmentStats {
 
     @JmxGetter(name = "PercentageRandomReadBytes")
     public double getPercentageRandomReadBytes() {
-        return safeGetPercentage(getNumRandomWriteBytes(), getNumRandomReadBytes() +
-                                                           getNumSequentialReadBytes());
+        return safeGetPercentage(getNumRandomWriteBytes(), getNumRandomReadBytes()
+                                                           + getNumSequentialReadBytes());
     }
 
     @Experimental
@@ -193,17 +193,16 @@ public class BdbEnvironmentStats {
     @Experimental
     @JmxGetter(name = "PercentageCacheMisses")
     public double getPercentageCacheMisses() {
-        return safeGetPercentage(getNumCacheMiss(),
-                                 getNumReadsTotal() + getNumWritesTotal());
+        return safeGetPercentage(getNumCacheMiss(), getNumReadsTotal() + getNumWritesTotal());
     }
 
     @JmxGetter(name = "PercentageContended")
     public double getPercentageContended() {
-        return safeGetPercentage(getNumAcquiresWithContention(),
-                                 getNumAcquiresWithContention() + getNumAcquiresNoWaiters());
+        return safeGetPercentage(getNumAcquiresWithContention(), getNumAcquiresWithContention()
+                                                                 + getNumAcquiresNoWaiters());
     }
 
     public static double safeGetPercentage(long rawNum, long total) {
-        return total == 0 ? 0.0d : rawNum / (float)total;
+        return total == 0 ? 0.0d : rawNum / (float) total;
     }
 }

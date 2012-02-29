@@ -16,6 +16,7 @@
 
 package voldemort.server.scheduler;
 
+import java.util.Date;
 import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
@@ -61,9 +62,12 @@ public class DataCleanupJob<K, V, T> implements Runnable {
         ClosableIterator<Pair<K, Versioned<V>>> iterator = null;
         try {
             logger.info("Starting data cleanup on store \"" + store.getName() + "\"...");
+            System.out.println(new Date() + ": Starting data cleanup on store \"" + store.getName()
+                               + "\"...");
             int deleted = 0;
+            int scanned = 0;
             long now = time.getMilliseconds();
-            iterator = store.entries();
+            iterator = store.entriesCacheUnchanged();
 
             while(iterator.hasNext()) {
                 // check if we have been interrupted
@@ -74,18 +78,21 @@ public class DataCleanupJob<K, V, T> implements Runnable {
 
                 Pair<K, Versioned<V>> keyAndVal = iterator.next();
                 VectorClock clock = (VectorClock) keyAndVal.getSecond().getVersion();
-                if(now - clock.getTimestamp() > maxAgeMs) {
-                    store.delete(keyAndVal.getFirst(), clock);
-                    deleted++;
-                    if(deleted % 10000 == 0)
-                        logger.debug("Deleted item " + deleted);
-                }
-
+                /*
+                 * if(now - clock.getTimestamp() > maxAgeMs) {
+                 * store.delete(keyAndVal.getFirst(), clock); deleted++;
+                 * if(deleted % 10000 == 0) logger.debug("Deleted item " +
+                 * deleted); }
+                 */
+                scanned++;
                 // throttle on number of entries.
                 throttler.maybeThrottle(1);
             }
             logger.info("Data cleanup on store \"" + store.getName() + "\" is complete; " + deleted
                         + " items deleted.");
+            System.out.println(new Date() + ": Data cleanup on store \"" + store.getName()
+                               + "\" is complete; " + deleted + " items deleted, " + scanned
+                               + " items scanned");
         } catch(Exception e) {
             logger.error("Error in data cleanup job for store " + store.getName() + ": ", e);
         } finally {

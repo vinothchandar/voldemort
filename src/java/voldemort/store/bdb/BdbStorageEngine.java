@@ -17,8 +17,11 @@
 package voldemort.store.bdb;
 
 import java.io.File;
+import java.io.PrintStream;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.codec.binary.Hex;
@@ -51,12 +54,14 @@ import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
 import com.google.common.collect.Lists;
+import com.sleepycat.je.CacheMode;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseStats;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentStats;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.StatsConfig;
@@ -82,6 +87,29 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
     private final BdbEnvironmentStats bdbEnvironmentStats;
     private final AtomicBoolean isTruncating = new AtomicBoolean(false);
 
+    /* HACK to get the bdb fast stats dumped out */
+    private static ConcurrentHashMap<String, BdbStorageEngine> fastStatsPublisherMap;
+    static Object statLock;
+    private long lastStatts = 0;
+    private PrintStream bdbStatFile;
+    StatsConfig statconfig = null;
+
+    static {
+        statLock = new Object();
+        fastStatsPublisherMap = new ConcurrentHashMap<String, BdbStorageEngine>();
+    }
+
+    private void dumpStats() {
+        if(statconfig != null) {
+            long ts = System.currentTimeMillis();
+            if((ts - lastStatts) >= 5000) {
+                EnvironmentStats stats = environment.getStats(statconfig);
+                bdbStatFile.println("===\n" + new Date().toString() + " Status" + stats.toString());
+                lastStatts = ts;
+            }
+        }
+    }
+
     public BdbStorageEngine(String name,
                             Environment environment,
                             Database database,
@@ -90,6 +118,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
         this.bdbDatabase = Utils.notNull(database);
         this.environment = Utils.notNull(environment);
         this.versionedSerializer = new VersionedSerializer<byte[]>(new IdentitySerializer());
+
         this.versionSerializer = new Serializer<Version>() {
 
             public byte[] toBytes(Version object) {
@@ -103,6 +132,22 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
         this.isOpen = new AtomicBoolean(true);
         this.readLockMode = config.getLockMode();
         this.bdbEnvironmentStats = new BdbEnvironmentStats(environment, config.getStatsCacheTtlMs());
+
+        /* HACK Vinoth */
+        synchronized(statLock) {
+            if(!fastStatsPublisherMap.containsKey(name)) {
+                fastStatsPublisherMap.put(name, this);
+                lastStatts = System.currentTimeMillis();
+                statconfig = new StatsConfig();
+                statconfig.setFast(true);
+                statconfig.setClear(true);
+                try {
+                    bdbStatFile = new PrintStream(new File("bdbfaststats." + name));
+                } catch(Exception e) {
+                    logger.error("Error creating the bdb fast stats file");
+                }
+            }
+        }
     }
 
     public String getName() {
@@ -112,6 +157,19 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
     public ClosableIterator<Pair<ByteArray, Versioned<byte[]>>> entries() {
         try {
             Cursor cursor = getBdbDatabase().openCursor(null, null);
+            return new BdbEntriesIterator(cursor);
+        } catch(DatabaseException e) {
+            logger.error(e);
+            throw new PersistenceFailureException(e);
+        }
+    }
+
+    public ClosableIterator<Pair<ByteArray, Versioned<byte[]>>> entriesCacheUnchanged() {
+        try {
+            Cursor cursor = getBdbDatabase().openCursor(null, null);
+            cursor.setCacheMode(CacheMode.UNCHANGED);
+            System.out.println("Opening cursor with UNCHANGED cachemode");
+            logger.info("Opening cursor with UNCHANGED cachemode");
             return new BdbEntriesIterator(cursor);
         } catch(DatabaseException e) {
             logger.error(e);
@@ -208,6 +266,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
                             LockMode lockMode,
                             Serializer<T> serializer) throws PersistenceFailureException {
         StoreUtils.assertValidKey(key);
+        dumpStats();
 
         Cursor cursor = null;
         try {
@@ -282,6 +341,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
     public void put(ByteArray key, Versioned<byte[]> value, byte[] transforms)
             throws PersistenceFailureException {
         StoreUtils.assertValidKey(key);
+        dumpStats();
 
         DatabaseEntry keyEntry = new DatabaseEntry(key.get());
         boolean succeeded = false;
@@ -334,6 +394,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
 
     public boolean delete(ByteArray key, Version version) throws PersistenceFailureException {
         StoreUtils.assertValidKey(key);
+        dumpStats();
         boolean deletedSomething = false;
         Cursor cursor = null;
         Transaction transaction = null;

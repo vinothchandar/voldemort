@@ -64,6 +64,10 @@ public class InMemoryStorageEngine<K, V, T> implements StorageEngine<K, V, T> {
         this.map.clear();
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public boolean delete(K key) {
         return delete(key, null);
     }
@@ -258,7 +262,7 @@ public class InMemoryStorageEngine<K, V, T> implements StorageEngine<K, V, T> {
         }
 
         public void close() {
-        // nothing to do here
+            // nothing to do here
         }
 
     }

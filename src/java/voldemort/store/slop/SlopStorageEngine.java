@@ -81,6 +81,10 @@ public class SlopStorageEngine implements StorageEngine<ByteArray, byte[], byte[
                                              new IdentitySerializer());
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public ClosableIterator<Pair<ByteArray, Versioned<byte[]>>> entries() {
         return slopEngine.entries();
     }

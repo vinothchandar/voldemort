@@ -98,6 +98,10 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[], byte[]> {
         REBALANCING_MASTER_SERVER
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     private final Store<String, String, String> innerStore;
     private final Map<String, Versioned<Object>> metadataCache;
 
@@ -191,8 +195,9 @@ public class MetadataStore implements StorageEngine<ByteArray, byte[], byte[]> {
     public void put(String key, Object value) {
         if(METADATA_KEYS.contains(key)) {
             VectorClock version = (VectorClock) get(key, null).get(0).getVersion();
-            put(key, new Versioned<Object>(value, version.incremented(getNodeId(),
-                                                                      System.currentTimeMillis())));
+            put(key,
+                new Versioned<Object>(value, version.incremented(getNodeId(),
+                                                                 System.currentTimeMillis())));
         } else {
             throw new VoldemortException("Unhandled Key:" + key + " for MetadataStore put()");
         }

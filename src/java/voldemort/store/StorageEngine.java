@@ -55,6 +55,8 @@ public interface StorageEngine<K, V, T> extends Store<K, V, T> {
      */
     public ClosableIterator<Pair<K, Versioned<V>>> entries();
 
+    public ClosableIterator<Pair<K, Versioned<V>>> entriesCacheUnchanged();
+
     /**
      * Get an iterator over keys in the store.
      * 

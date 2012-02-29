@@ -64,6 +64,10 @@ public class KratiStorageEngine implements StorageEngine<ByteArray, byte[], byte
 
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public Object getCapability(StoreCapabilityType capability) {
         throw new NoSuchCapabilityException(capability, getName());
     }
@@ -291,7 +295,7 @@ public class KratiStorageEngine implements StorageEngine<ByteArray, byte[], byte
         }
 
         public void close() {
-        // Nothing to close here
+            // Nothing to close here
         }
 
         public boolean hasNext() {

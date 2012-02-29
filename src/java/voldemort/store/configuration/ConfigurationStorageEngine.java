@@ -67,6 +67,10 @@ public class ConfigurationStorageEngine implements StorageEngine<String, String,
 
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public synchronized boolean delete(String key, Version version) throws VoldemortException {
         StoreUtils.assertValidKey(key);
         for(File file: getDirectory(key).listFiles()) {

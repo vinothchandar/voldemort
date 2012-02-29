@@ -567,12 +567,14 @@ public class StorageService extends AbstractService {
                                     StorageEngine<ByteArray, byte[], byte[]> engine) {
         // Schedule data retention cleanup job starting next day.
         GregorianCalendar cal = new GregorianCalendar();
-        cal.add(Calendar.DAY_OF_YEAR, 1);
+        //HACK Vinoth
+        cal.add(Calendar.MINUTE, storeDef.getRetentionDays());
+        /*cal.add(Calendar.DAY_OF_YEAR, 1);
         cal.set(Calendar.HOUR_OF_DAY, voldemortConfig.getRetentionCleanupFirstStartTimeInHour());
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-
+        */
         // allow only one cleanup job at a time
         Date startTime = cal.getTime();
 
@@ -583,12 +585,15 @@ public class StorageService extends AbstractService {
                     + "' at " + startTime + " with retention scan throttle rate:" + maxReadRate
                     + " Entries/second.");
 
+        System.out.println("Scheduling data retention cleanup job for store '" + storeDef.getName()
+                    + "' at " + startTime + " with retention scan throttle rate:" + maxReadRate
+                    + " Entries/second.");
         EventThrottler throttler = new EventThrottler(maxReadRate);
 
         Runnable cleanupJob = new DataCleanupJob<ByteArray, byte[], byte[]>(engine,
                                                                             scanPermits,
                                                                             storeDef.getRetentionDays()
-                                                                                    * Time.MS_PER_DAY,
+                                                                                    * Time.MS_PER_SECOND * 60,
                                                                             SystemTime.INSTANCE,
                                                                             throttler);
 

@@ -87,6 +87,10 @@ public class MysqlStorageEngine implements StorageEngine<ByteArray, byte[], byte
         }
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public void destroy() {
         execute("drop table if exists " + getName());
     }
@@ -148,7 +152,7 @@ public class MysqlStorageEngine implements StorageEngine<ByteArray, byte[], byte
     }
 
     public void close() throws PersistenceFailureException {
-    // don't close datasource cause others could be using it
+        // don't close datasource cause others could be using it
     }
 
     public Object getCapability(StoreCapabilityType capability) {

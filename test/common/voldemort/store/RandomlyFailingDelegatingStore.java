@@ -40,6 +40,10 @@ public class RandomlyFailingDelegatingStore<K, V, T> extends DelegatingStore<K, 
         };
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     public ClosableIterator<K> keys() {
         return new ClosableIterator<K>() {
 

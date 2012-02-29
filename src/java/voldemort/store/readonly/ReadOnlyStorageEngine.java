@@ -92,6 +92,10 @@ public class ReadOnlyStorageEngine implements StorageEngine<ByteArray, byte[], b
         this.deleteBackupMs = deleteBackupMs;
     }
 
+    public ClosableIterator entriesCacheUnchanged() {
+        return null;
+    }
+
     /**
      * Create an instance of the store
      * 

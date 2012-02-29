@@ -142,7 +142,62 @@ public class VoldemortServer extends AbstractService {
         }
     }
 
+    /**
+     * Before we do anything, make dummy allocations to fill the heap, so that
+     * we ensure that we actually get as much physical pages allocated as the
+     * heap size. This prevents a situation later, when a scan job (eg: data
+     * clean up) has high memory churn, and we end up fighting with the OS for
+     * pages at that time. mlock() ing the jvm heap should also help this cause
+     * 
+     * @param fillTime
+     */
+    static void heapFill(int fillTime) {
+        ArrayList<byte[]> al = new ArrayList<byte[]>();
+
+        logger.info(" Starting heap fill for " + fillTime + " seconds ...");
+        System.out.println(" Starting heap fill for " + fillTime + " seconds ...");
+        int numAlloced = 0;
+        int numFreeLeft = 10;
+        Runtime runtime = Runtime.getRuntime();
+        long oneMb = 1024 * 1024;
+
+        try {
+            long starttime_call, now, e;
+            starttime_call = System.nanoTime();
+
+            for(;;) {
+                al.add(new byte[(int) oneMb]);
+                now = System.nanoTime();
+                e = (now - starttime_call) / 1000000000;
+                numAlloced++;
+
+                // if in the middle we detect we are very close to our max heap;
+                // exit.
+                if(runtime.freeMemory() < numFreeLeft * oneMb)
+                    break;
+                // if we have been doing this long enough and still cannot fill,
+                // give up
+                if(e > fillTime)
+                    break;
+            }
+
+            // orphan the memory hold by the linked list
+            al = null;
+            // allocate a large chunk larger than the remaining memory to force
+            // gc.
+            byte[] bytes = new byte[2 * numFreeLeft * (int) oneMb];
+        } catch(Throwable t) {
+            t.printStackTrace();
+            logger.info("Error filling heap.");
+        }
+        System.out.println(" Done filling heap upto " + numAlloced + "Mb, currently free "
+                           + (runtime.freeMemory() / oneMb) + " Mb");
+    }
+
     private List<VoldemortService> createServices() {
+
+        /* fill the heap */
+        heapFill(300);
 
         /* Services are given in the order they must be started */
         List<VoldemortService> services = new ArrayList<VoldemortService>();
