@@ -185,6 +185,8 @@ public class VoldemortConfig implements Serializable {
     private int retentionCleanupScheduledPeriodInHour;
     private int retentionCleanupFirstStartDayOfWeek;
     private boolean retentionCleanupPinStartTime;
+    private boolean enforceRetentionPolicyOnRead;
+    private boolean deleteExpiredValuesOnRead;
 
     private int maxRebalancingAttempt;
     private long rebalancingTimeoutSec;
@@ -362,6 +364,12 @@ public class VoldemortConfig implements Serializable {
         // should the retention job always start at the 'start time' specified
         this.retentionCleanupPinStartTime = props.getBoolean("retention.cleanup.pin.start.time",
                                                              true);
+        // should the online reads filter out stale values when reading them ?
+        this.enforceRetentionPolicyOnRead = props.getBoolean("enforce.retention.policy.on.read",
+                                                             false);
+        // should the online reads issue deletes to clear out stale values when
+        // reading them?
+        this.deleteExpiredValuesOnRead = props.getBoolean("delete.expired.values.on.read", false);
 
         // save props for access from plugins
         this.allProps = props;
@@ -1446,6 +1454,22 @@ public class VoldemortConfig implements Serializable {
 
     public void setRetentionCleanupPinStartTime(boolean retentionCleanupFixStartTime) {
         this.retentionCleanupPinStartTime = retentionCleanupFixStartTime;
+    }
+
+    public boolean isEnforceRetentionPolicyOnRead() {
+        return enforceRetentionPolicyOnRead;
+    }
+
+    public void setEnforceRetentionPolicyOnRead(boolean enforceRetentionPolicyOnRead) {
+        this.enforceRetentionPolicyOnRead = enforceRetentionPolicyOnRead;
+    }
+
+    public boolean isDeleteExpiredValuesOnRead() {
+        return deleteExpiredValuesOnRead;
+    }
+
+    public void setDeleteExpiredValuesOnRead(boolean deleteExpiredValuesOnRead) {
+        this.deleteExpiredValuesOnRead = deleteExpiredValuesOnRead;
     }
 
     public int getAdminSocketTimeout() {
