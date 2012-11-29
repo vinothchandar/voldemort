@@ -242,8 +242,11 @@ public class NioSocketService extends AbstractSocketService {
                         continue;
                     }
 
-                    NioSelectorManager selectorManager = selectorManagers[counter.getAndIncrement()
-                                                                          % selectorManagers.length];
+                    int selectorMangerIndex = counter.getAndIncrement() % selectorManagers.length;
+                    NioSelectorManager selectorManager = selectorManagers[selectorMangerIndex];
+                    logger.info("Handing off client socket " + socketChannel + " to selector "
+                                + (selectorMangerIndex + 1) + " hashcode:"
+                                + selectorManager.hashCode());
                     selectorManager.accept(socketChannel);
                 } catch(ClosedByInterruptException e) {
                     // If you're *really* interested...

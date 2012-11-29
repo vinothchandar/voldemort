@@ -243,7 +243,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
             throw new PersistenceFailureException(e);
         } finally {
             if(logger.isTraceEnabled()) {
-                logger.trace("Completed GET from key " + key + " (keyRef: "
+                logger.trace("Completed GET for " + getName() + " from key " + key + " (keyRef: "
                              + System.identityHashCode(key) + ") in "
                              + (System.nanoTime() - startTimeNs) + " ns at "
                              + System.currentTimeMillis());
@@ -269,7 +269,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
                 String keyStr = "";
                 for(ByteArray key: keys)
                     keyStr += key + " ";
-                logger.trace("Completed GETALL from keys " + keyStr + " in "
+                logger.trace("Completed GETALL for " + getName() + " from keys " + keyStr + " in "
                              + (System.nanoTime() - startTimeNs) + " ns at "
                              + System.currentTimeMillis());
             }
@@ -345,7 +345,7 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
             else
                 attemptAbort(transaction);
             if(logger.isTraceEnabled()) {
-                logger.trace("Completed PUT to key " + key + " (keyRef: "
+                logger.trace("Completed PUT for " + getName() + " to key " + key + " (keyRef: "
                              + System.identityHashCode(key) + " value " + value + " in "
                              + (System.nanoTime() - startTimeNs) + " ns at "
                              + System.currentTimeMillis());
@@ -420,8 +420,9 @@ public class BdbStorageEngine implements StorageEngine<ByteArray, byte[], byte[]
         } finally {
             attemptCommit(transaction);
             if(logger.isTraceEnabled()) {
-                logger.trace("Completed DELETE of key " + ByteUtils.toHexString(key.get())
-                             + " (keyRef: " + System.identityHashCode(key) + ") in "
+                logger.trace("Completed DELETE for " + getName() + " of key "
+                             + ByteUtils.toHexString(key.get()) + " (keyRef: "
+                             + System.identityHashCode(key) + ") in "
                              + (System.nanoTime() - startTimeNs) + " ns at "
                              + System.currentTimeMillis());
             }

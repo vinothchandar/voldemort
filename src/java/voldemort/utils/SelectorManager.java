@@ -27,6 +27,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import voldemort.VoldemortException;
+import voldemort.server.niosocket.NioSelectorManager;
 
 /**
  * SelectorManager handles the non-blocking polling of IO events using the
@@ -160,6 +161,10 @@ public class SelectorManager implements Runnable {
     }
 
     public void run() {
+        String selectorName = Thread.currentThread().getName();
+        boolean isServerSelector = this instanceof NioSelectorManager;
+        if(isServerSelector)
+            logger.info(selectorName + " hashcode:" + this.hashCode());
         try {
             while(true) {
                 if(isClosed.get()) {
@@ -172,7 +177,11 @@ public class SelectorManager implements Runnable {
                 processEvents();
 
                 try {
+                    long startTimeNs = System.nanoTime();
                     int selected = selector.select(SELECTOR_POLL_MS);
+                    if(isServerSelector)
+                        logger.info(selectorName + ",select," + selected + ","
+                                    + (System.nanoTime() - startTimeNs));
 
                     if(isClosed.get()) {
                         if(logger.isInfoEnabled())
@@ -182,7 +191,13 @@ public class SelectorManager implements Runnable {
                     }
 
                     if(selected > 0) {
+                        startTimeNs = System.nanoTime();
                         Iterator<SelectionKey> i = selector.selectedKeys().iterator();
+
+                        int reads = 0;
+                        int writes = 0;
+                        long readTimeNs = 0;
+                        long writeTimeNs = 0;
 
                         while(i.hasNext()) {
                             SelectionKey selectionKey = i.next();
@@ -190,10 +205,30 @@ public class SelectorManager implements Runnable {
 
                             if(selectionKey.isValid()
                                && (selectionKey.isReadable() || selectionKey.isWritable())) {
+
+                                boolean read = false;
+                                if(isServerSelector && selectionKey.isReadable())
+                                    read = true;
+
                                 Runnable worker = (Runnable) selectionKey.attachment();
+                                long processBeginNs = System.nanoTime();
                                 worker.run();
+
+                                if(isServerSelector) {
+                                    if(read) {
+                                        reads++;
+                                        readTimeNs += System.nanoTime() - processBeginNs;
+                                    } else {
+                                        writes++;
+                                        writeTimeNs += System.nanoTime() - processBeginNs;
+                                    }
+                                }
                             }
                         }
+                        if(isServerSelector)
+                            logger.info(selectorName + ",process," + reads + "," + writes + ","
+                                        + readTimeNs + "," + writeTimeNs + ","
+                                        + (System.nanoTime() - startTimeNs));
                     }
                 } catch(ClosedSelectorException e) {
                     if(logger.isDebugEnabled())
@@ -217,5 +252,4 @@ public class SelectorManager implements Runnable {
             }
         }
     }
-
 }
