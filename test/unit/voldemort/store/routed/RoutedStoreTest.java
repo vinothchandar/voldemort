@@ -56,6 +56,7 @@ import voldemort.common.VoldemortOpCode;
 import voldemort.routing.RoutingStrategy;
 import voldemort.routing.RoutingStrategyFactory;
 import voldemort.routing.RoutingStrategyType;
+import voldemort.routing.StoreRoutingPlan;
 import voldemort.serialization.SerializerDefinition;
 import voldemort.store.AbstractByteArrayStoreTest;
 import voldemort.store.FailingReadsStore;
@@ -100,6 +101,7 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
     public static final int OPERATION_TIMEOUT = 60;
 
     private Cluster cluster;
+    private StoreDefinition storeDef;
     private final ByteArray aKey = TestUtils.toByteArray("jay");
     private final byte[] aValue = "kreps".getBytes();
     private final byte[] aTransform = "transform".getBytes();
@@ -157,7 +159,7 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
                         threads,
                         failing,
                         0,
-                        RoutingStrategyType.TO_ALL_STRATEGY,
+                        RoutingStrategyType.CONSISTENT_STRATEGY,
                         new VoldemortException());
     }
 
@@ -194,13 +196,13 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
         }
 
         setFailureDetector(subStores);
-        StoreDefinition storeDef = ServerTestUtils.getStoreDef("test",
-                                                               reads + writes,
-                                                               reads,
-                                                               reads,
-                                                               writes,
-                                                               writes,
-                                                               strategy);
+        this.storeDef = ServerTestUtils.getStoreDef("test",
+                                                    reads + writes,
+                                                    reads,
+                                                    reads,
+                                                    writes,
+                                                    writes,
+                                                    strategy);
         routedStoreThreadPool = Executors.newFixedThreadPool(threads);
         RoutedStoreFactory routedStoreFactory = new RoutedStoreFactory(isPipelineRoutedStoreEnabled,
                                                                        routedStoreThreadPool,
@@ -224,7 +226,6 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
                                  long timeOutMs,
                                  VoldemortException e) throws Exception {
         Map<Integer, Store<ByteArray, byte[], byte[]>> subStores = Maps.newHashMap();
-        int count = 0;
         for(Node n: cluster.getNodes()) {
             Store<ByteArray, byte[], byte[]> subStore = null;
 
@@ -237,21 +238,19 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
                 subStore = new InMemoryStorageEngine<ByteArray, byte[], byte[]>("test");
 
             subStores.put(n.getId(), subStore);
-
-            count += 1;
         }
 
         setFailureDetector(subStores);
-        StoreDefinition storeDef = ServerTestUtils.getStoreDef("test",
-                                                               reads,
-                                                               reads,
-                                                               writes,
-                                                               writes,
-                                                               zonereads,
-                                                               zonewrites,
-                                                               zoneReplicationFactor,
-                                                               HintedHandoffStrategyType.PROXIMITY_STRATEGY,
-                                                               strategy);
+        this.storeDef = ServerTestUtils.getStoreDef("test",
+                                                    reads,
+                                                    reads,
+                                                    writes,
+                                                    writes,
+                                                    zonereads,
+                                                    zonewrites,
+                                                    zoneReplicationFactor,
+                                                    HintedHandoffStrategyType.PROXIMITY_STRATEGY,
+                                                    strategy);
         routedStoreThreadPool = Executors.newFixedThreadPool(threads);
         RoutedStoreFactory routedStoreFactory = new RoutedStoreFactory(true,
                                                                        routedStoreThreadPool,
@@ -958,43 +957,58 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
     public void testReadRepairWithFailures() throws Exception {
         cluster = getNineNodeCluster();
 
-        RoutedStore routedStore = getStore(cluster,
-                                           cluster.getNumberOfNodes() - 1,
-                                           cluster.getNumberOfNodes() - 1,
-                                           1,
-                                           0);
-        // Disable node 1 so that the first put also goes to the last node
-        recordException(failureDetector, Iterables.get(cluster.getNodes(), 1));
+        RoutedStore routedStore = getStore(cluster, 2, 2, 1, 0);
+        StoreRoutingPlan routingPlan = new StoreRoutingPlan(cluster, this.storeDef);
+        List<Integer> replicatingNodes = routingPlan.getReplicationNodeList(aKey.get());
+        // This is node 1
+        Node primaryNode = Iterables.get(cluster.getNodes(), replicatingNodes.get(0));
+        // This is node 6
+        Node secondaryNode = Iterables.get(cluster.getNodes(), replicatingNodes.get(1));
+
+        // Disable primary node so that the first put happens with 6 as the
+        // pseudo master
+        recordException(failureDetector, primaryNode);
         Store<ByteArray, byte[], byte[]> store = new InconsistencyResolvingStore<ByteArray, byte[], byte[]>(routedStore,
                                                                                                             new VectorClockInconsistencyResolver<byte[]>());
         store.put(aKey, new Versioned<byte[]>(aValue), null);
 
         byte[] anotherValue = "john".getBytes();
 
-        // Disable the last node and enable node 1 to prevent the last node from
-        // getting the new version
-        recordException(failureDetector, Iterables.getLast(cluster.getNodes()));
-        recordSuccess(failureDetector, Iterables.get(cluster.getNodes(), 1));
-        VectorClock clock = getClock(1);
+        /*
+         * Disable the secondary node and enable primary node to prevent the
+         * secondary from getting the new version
+         */
+        recordException(failureDetector, secondaryNode);
+        recordSuccess(failureDetector, primaryNode);
+        // Generate the clock based off secondary so that the resulting clock
+        // will be [1:1, 6:1] across the replicas, except for the secondary
+        // which will be [6:1]
+        VectorClock clock = getClock(6);
         store.put(aKey, new Versioned<byte[]>(anotherValue, clock), null);
 
-        // Enable last node and disable node 1, the following get should cause a
-        // read repair on the last node in the code path that is only executed
-        // if there are failures.
-        recordException(failureDetector, Iterables.get(cluster.getNodes(), 1));
-        recordSuccess(failureDetector, Iterables.getLast(cluster.getNodes()));
+        // Enable secondary and disable primary, the following get should cause
+        // a read repair on the secondary in the code path that is only executed
+        // if there are failures. This should repair the secondary with the
+        // superceding clock [1:1,6:1]
+        recordException(failureDetector, primaryNode);
+        recordSuccess(failureDetector, secondaryNode);
         List<Versioned<byte[]>> versioneds = store.get(aKey, null);
         assertEquals(1, versioneds.size());
         assertEquals(new ByteArray(anotherValue), new ByteArray(versioneds.get(0).getValue()));
 
         // Read repairs are done asynchronously, so we sleep for a short period.
         // It may be a good idea to use a synchronous executor service.
-        Thread.sleep(100);
-        for(Store<ByteArray, byte[], byte[]> innerStore: routedStore.getInnerStores().values()) {
-            List<Versioned<byte[]>> innerVersioneds = innerStore.get(aKey, null);
-            assertEquals(1, versioneds.size());
-            assertEquals(new ByteArray(anotherValue), new ByteArray(innerVersioneds.get(0)
-                                                                                   .getValue()));
+        Thread.sleep(500);
+        for(Map.Entry<Integer, Store<ByteArray, byte[], byte[]>> innerStoreEntry: routedStore.getInnerStores()
+                                                                                             .entrySet()) {
+            // Only look at the nodes in the pref list
+            if(replicatingNodes.contains(innerStoreEntry.getKey())) {
+                List<Versioned<byte[]>> innerVersioneds = innerStoreEntry.getValue()
+                                                                         .get(aKey, null);
+                assertEquals(1, versioneds.size());
+                assertEquals(new ByteArray(anotherValue), new ByteArray(innerVersioneds.get(0)
+                                                                                       .getValue()));
+            }
         }
     }
 
@@ -1478,6 +1492,8 @@ public class RoutedStoreTest extends AbstractByteArrayStoreTest {
         if(failureDetector != null)
             failureDetector.destroy();
 
+        // Bannage is not supported/recommended anymore. But makes sense for the
+        // purpose of this test.
         FailureDetectorConfig failureDetectorConfig = new FailureDetectorConfig().setImplementationClassName(failureDetectorClass.getName())
                                                                                  .setBannagePeriod(BANNAGE_PERIOD)
                                                                                  .setCluster(cluster)
