@@ -3,6 +3,7 @@ package voldemort.store;
 import java.util.List;
 
 import voldemort.VoldemortException;
+import voldemort.server.storage.KeyLockHandle;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.Versioned;
@@ -166,5 +167,20 @@ public class RandomlyFailingDelegatingStore<K, V, T> extends DelegatingStore<K, 
     @Override
     public List<Versioned<V>> multiVersionPut(K key, List<Versioned<V>> values) {
         return innerStorageEngine.multiVersionPut(key, values);
+    }
+
+    @Override
+    public KeyLockHandle<V> getAndLock(K key) {
+        return innerStorageEngine.getAndLock(key);
+    }
+
+    @Override
+    public void putAndUnlock(K key, KeyLockHandle<V> handle) {
+        innerStorageEngine.putAndUnlock(key, handle);
+    }
+
+    @Override
+    public void releaseLock(KeyLockHandle<V> handle) {
+        innerStorageEngine.releaseLock(handle);
     }
 }

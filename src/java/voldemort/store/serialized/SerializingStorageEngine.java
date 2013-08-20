@@ -19,6 +19,7 @@ package voldemort.store.serialized;
 import java.util.List;
 
 import voldemort.serialization.Serializer;
+import voldemort.server.storage.KeyLockHandle;
 import voldemort.store.StorageEngine;
 import voldemort.utils.ByteArray;
 import voldemort.utils.ClosableIterator;
@@ -174,6 +175,24 @@ public class SerializingStorageEngine<K, V, T> extends SerializingStore<K, V, T>
     public List<Versioned<V>> multiVersionPut(K key, List<Versioned<V>> values) {
         // This is used only for slops as of now.
         throw new UnsupportedOperationException("multiVersionPut is not supported for "
+                                                + this.getClass().getName());
+    }
+
+    @Override
+    public KeyLockHandle<V> getAndLock(K key) {
+        throw new UnsupportedOperationException("getAndLock is not supported for "
+                                                + this.getClass().getName());
+    }
+
+    @Override
+    public void putAndUnlock(K key, KeyLockHandle<V> handle) {
+        throw new UnsupportedOperationException("putAndUnlock is not supported for "
+                                                + this.getClass().getName());
+    }
+
+    @Override
+    public void releaseLock(KeyLockHandle<V> handle) {
+        throw new UnsupportedOperationException("releaseLock is not supported for "
                                                 + this.getClass().getName());
     }
 }

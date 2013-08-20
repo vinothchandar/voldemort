@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import voldemort.server.storage.KeyLockHandle;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.Occurred;
@@ -75,7 +76,7 @@ public class AbstractStorageEngine<K, V, T> extends AbstractStore<K, V, T> imple
      * @return list of versions from multiPutVals that were rejected as obsolete
      */
     protected List<Versioned<V>> resolveAndConstructVersionsToPersist(List<Versioned<V>> valuesInStorage,
-                                                                    List<Versioned<V>> multiPutValues) {
+                                                                      List<Versioned<V>> multiPutValues) {
         List<Versioned<V>> obsoleteVals = new ArrayList<Versioned<V>>(multiPutValues.size());
         // Go over all the values and determine whether the version is
         // acceptable
@@ -103,5 +104,23 @@ public class AbstractStorageEngine<K, V, T> extends AbstractStore<K, V, T> imple
         }
 
         return obsoleteVals;
+    }
+
+    @Override
+    public KeyLockHandle<V> getAndLock(K key) {
+        throw new UnsupportedOperationException("getAndLock is not supported for "
+                                                + this.getClass().getName());
+    }
+
+    @Override
+    public void putAndUnlock(K key, KeyLockHandle<V> handle) {
+        throw new UnsupportedOperationException("putAndUnlock is not supported for "
+                                                + this.getClass().getName());
+    }
+
+    @Override
+    public void releaseLock(KeyLockHandle<V> handle) {
+        throw new UnsupportedOperationException("releaseLock is not supported for "
+                                                + this.getClass().getName());
     }
 }

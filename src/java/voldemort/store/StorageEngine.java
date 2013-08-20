@@ -18,6 +18,7 @@ package voldemort.store;
 
 import java.util.List;
 
+import voldemort.server.storage.KeyLockHandle;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.Versioned;
@@ -133,6 +134,37 @@ public interface StorageEngine<K, V, T> extends Store<K, V, T> {
      * @return list of obsolete versions that were rejected
      */
     public List<Versioned<V>> multiVersionPut(K key, List<Versioned<V>> values);
+
+    /**
+     * Returns the list of versions stored for the key, at the same time locking
+     * the key for any writes until
+     * {@link StorageEngine#putAndUnlock(Object, KeyLockHandle)} is called with
+     * the same lock handle. The idea here is to facilitate custom atomic
+     * Read-Modify-Write logic outside the storage engine
+     * 
+     * @param key
+     * @return
+     */
+    public KeyLockHandle<V> getAndLock(K key);
+
+    /**
+     * Takes the handle issued from a prior
+     * {@link StorageEngine#getAndLock(Object)} call, and update the key with
+     * the set of values provided in the handle, also releasing the lock held on
+     * the key.
+     * 
+     * @param key
+     * @param handle handle object with new list of versions to be stored
+     */
+    public void putAndUnlock(K key, KeyLockHandle<V> handle);
+
+    /**
+     * Release any lock held by a prior
+     * {@link AbstractStorageEngine#getAndLock(Object)} call
+     * 
+     * @param handle
+     */
+    public void releaseLock(KeyLockHandle<V> handle);
 
     /**
      * 
