@@ -49,6 +49,7 @@ import voldemort.server.protocol.StreamRequestHandler;
 import voldemort.server.rebalance.Rebalancer;
 import voldemort.server.storage.RepairJob;
 import voldemort.server.storage.StorageService;
+import voldemort.server.storage.VersionedPutPruneJob;
 import voldemort.store.ErrorCodeMapper;
 import voldemort.store.StorageEngine;
 import voldemort.store.StoreDefinition;
@@ -250,6 +251,9 @@ public class AdminServiceRequestHandler implements RequestHandler {
             case REPAIR_JOB:
                 ProtoUtils.writeMessage(outputStream, handleRepairJob(request.getRepairJob()));
                 break;
+            case PRUNE_JOB:
+                ProtoUtils.writeMessage(outputStream, handlePruneJob(request.getPruneJob()));
+                break;
             case NATIVE_BACKUP:
                 ProtoUtils.writeMessage(outputStream, handleNativeBackup(request.getNativeBackup()));
                 break;
@@ -264,8 +268,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return null;
     }
 
-    private VAdminProto.DeleteStoreRebalanceStateResponse
-            handleDeleteStoreRebalanceState(VAdminProto.DeleteStoreRebalanceStateRequest request) {
+    private VAdminProto.DeleteStoreRebalanceStateResponse handleDeleteStoreRebalanceState(VAdminProto.DeleteStoreRebalanceStateRequest request) {
         VAdminProto.DeleteStoreRebalanceStateResponse.Builder response = VAdminProto.DeleteStoreRebalanceStateResponse.newBuilder();
         synchronized(rebalancer) {
             try {
@@ -298,15 +301,14 @@ public class AdminServiceRequestHandler implements RequestHandler {
             } catch(VoldemortException e) {
                 response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
                 logger.error("handleDeleteStoreRebalanceState failed for request("
-                             + request.toString() + ")",
+                                     + request.toString() + ")",
                              e);
             }
         }
         return response.build();
     }
 
-    public VAdminProto.RebalanceStateChangeResponse
-            handleRebalanceStateChange(VAdminProto.RebalanceStateChangeRequest request) {
+    public VAdminProto.RebalanceStateChangeResponse handleRebalanceStateChange(VAdminProto.RebalanceStateChangeRequest request) {
         VAdminProto.RebalanceStateChangeResponse.Builder response = VAdminProto.RebalanceStateChangeResponse.newBuilder();
 
         synchronized(rebalancer) {
@@ -342,8 +344,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.AsyncOperationStatusResponse
-            handleRebalanceNode(VAdminProto.InitiateRebalanceNodeRequest request) {
+    public VAdminProto.AsyncOperationStatusResponse handleRebalanceNode(VAdminProto.InitiateRebalanceNodeRequest request) {
         VAdminProto.AsyncOperationStatusResponse.Builder response = VAdminProto.AsyncOperationStatusResponse.newBuilder();
         try {
             if(!voldemortConfig.isEnableRebalanceService())
@@ -377,8 +378,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.GetROCurrentVersionDirResponse
-            handleGetROCurrentVersionDir(VAdminProto.GetROCurrentVersionDirRequest request) {
+    public VAdminProto.GetROCurrentVersionDirResponse handleGetROCurrentVersionDir(VAdminProto.GetROCurrentVersionDirRequest request) {
 
         final List<String> storeNames = request.getStoreNameList();
         VAdminProto.GetROCurrentVersionDirResponse.Builder response = VAdminProto.GetROCurrentVersionDirResponse.newBuilder();
@@ -403,8 +403,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.GetROMaxVersionDirResponse
-            handleGetROMaxVersionDir(VAdminProto.GetROMaxVersionDirRequest request) {
+    public VAdminProto.GetROMaxVersionDirResponse handleGetROMaxVersionDir(VAdminProto.GetROMaxVersionDirRequest request) {
         final List<String> storeNames = request.getStoreNameList();
         VAdminProto.GetROMaxVersionDirResponse.Builder response = VAdminProto.GetROMaxVersionDirResponse.newBuilder();
 
@@ -439,8 +438,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.GetROStorageFormatResponse
-            handleGetROStorageFormat(VAdminProto.GetROStorageFormatRequest request) {
+    public VAdminProto.GetROStorageFormatResponse handleGetROStorageFormat(VAdminProto.GetROStorageFormatRequest request) {
         final List<String> storeNames = request.getStoreNameList();
         VAdminProto.GetROStorageFormatResponse.Builder response = VAdminProto.GetROStorageFormatResponse.newBuilder();
 
@@ -466,8 +464,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.FailedFetchStoreResponse
-            handleFailedROFetch(VAdminProto.FailedFetchStoreRequest request) {
+    public VAdminProto.FailedFetchStoreResponse handleFailedROFetch(VAdminProto.FailedFetchStoreRequest request) {
         final String storeDir = request.getStoreDir();
         final String storeName = request.getStoreName();
         VAdminProto.FailedFetchStoreResponse.Builder response = VAdminProto.FailedFetchStoreResponse.newBuilder();
@@ -502,24 +499,21 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public StreamRequestHandler
-            handleFetchROPartitionFiles(VAdminProto.FetchPartitionFilesRequest request) {
+    public StreamRequestHandler handleFetchROPartitionFiles(VAdminProto.FetchPartitionFilesRequest request) {
         return new FetchPartitionFileStreamRequestHandler(request,
                                                           metadataStore,
                                                           voldemortConfig,
                                                           storeRepository);
     }
 
-    public StreamRequestHandler
-            handleUpdateSlopEntries(VAdminProto.UpdateSlopEntriesRequest request) {
+    public StreamRequestHandler handleUpdateSlopEntries(VAdminProto.UpdateSlopEntriesRequest request) {
         return new UpdateSlopEntriesRequestHandler(request,
                                                    errorCodeMapper,
                                                    storeRepository,
                                                    voldemortConfig);
     }
 
-    public StreamRequestHandler
-            handleFetchPartitionEntries(VAdminProto.FetchPartitionEntriesRequest request) {
+    public StreamRequestHandler handleFetchPartitionEntries(VAdminProto.FetchPartitionEntriesRequest request) {
         boolean fetchValues = request.hasFetchValues() && request.getFetchValues();
         boolean fetchOrphaned = request.hasFetchOrphaned() && request.getFetchOrphaned();
         StorageEngine<ByteArray, byte[], byte[]> storageEngine = AdminServiceRequestHandler.getStorageEngine(storeRepository,
@@ -558,8 +552,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         }
     }
 
-    public StreamRequestHandler
-            handleUpdatePartitionEntries(VAdminProto.UpdatePartitionEntriesRequest request) {
+    public StreamRequestHandler handleUpdatePartitionEntries(VAdminProto.UpdatePartitionEntriesRequest request) {
         StorageEngine<ByteArray, byte[], byte[]> storageEngine = AdminServiceRequestHandler.getStorageEngine(storeRepository,
                                                                                                              request.getStore());
         if(doesStorageEngineSupportMultiVersionPuts(storageEngine)) {
@@ -591,8 +584,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return true;
     }
 
-    public VAdminProto.AsyncOperationListResponse
-            handleAsyncOperationList(VAdminProto.AsyncOperationListRequest request) {
+    public VAdminProto.AsyncOperationListResponse handleAsyncOperationList(VAdminProto.AsyncOperationListRequest request) {
 
         VAdminProto.AsyncOperationListResponse.Builder response = VAdminProto.AsyncOperationListResponse.newBuilder();
         boolean showComplete = request.getShowComplete();
@@ -611,8 +603,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.AsyncOperationStopResponse
-            handleAsyncOperationStop(VAdminProto.AsyncOperationStopRequest request) {
+    public VAdminProto.AsyncOperationStopResponse handleAsyncOperationStop(VAdminProto.AsyncOperationStopRequest request) {
         VAdminProto.AsyncOperationStopResponse.Builder response = VAdminProto.AsyncOperationStopResponse.newBuilder();
         int requestId = request.getRequestId();
         try {
@@ -628,8 +619,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.RollbackStoreResponse
-            handleRollbackStore(VAdminProto.RollbackStoreRequest request) {
+    public VAdminProto.RollbackStoreResponse handleRollbackStore(VAdminProto.RollbackStoreRequest request) {
         final String storeName = request.getStoreName();
         final long pushVersion = request.getPushVersion();
         VAdminProto.RollbackStoreResponse.Builder response = VAdminProto.RollbackStoreResponse.newBuilder();
@@ -663,6 +653,10 @@ public class AdminServiceRequestHandler implements RequestHandler {
                 public void operate() {
                     RepairJob job = storeRepository.getRepairJob();
                     if(job != null) {
+                        if(job.getIsRunning().get()) {
+                            logger.info("Repair job already running .. backing off.. ");
+                            return;
+                        }
                         logger.info("Starting the repair job now on ID : "
                                     + metadataStore.getNodeId());
                         job.run();
@@ -678,6 +672,44 @@ public class AdminServiceRequestHandler implements RequestHandler {
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
             logger.error("Repair job failed for request : " + request.toString() + ")", e);
+        }
+        return response.build();
+    }
+
+    public VAdminProto.PruneJobResponse handlePruneJob(VAdminProto.PruneJobRequest request) {
+        VAdminProto.PruneJobResponse.Builder response = VAdminProto.PruneJobResponse.newBuilder();
+        try {
+            int requestId = asyncService.getUniqueRequestId();
+            final String storeName = request.getStoreName();
+            asyncService.submitOperation(requestId, new AsyncOperation(requestId, "Prune Job-"
+                                                                                  + storeName) {
+
+                @Override
+                public void operate() {
+                    VersionedPutPruneJob job = storeRepository.getPruneJob();
+
+                    if(job != null) {
+                        if(job.getIsRunning().get()) {
+                            logger.info("Prune job already running .. backing off.. ");
+                            return;
+                        }
+                        job.setStoreName(storeName);
+                        logger.info("Starting the prune job now on ID : "
+                                    + metadataStore.getNodeId() + " for store " + storeName);
+                        job.run();
+                    } else {
+                        logger.error("PruneJob is not initialized.");
+                    }
+                }
+
+                @Override
+                public void stop() {
+                    status.setException(new VoldemortException("Prune job interrupted"));
+                }
+            });
+        } catch(VoldemortException e) {
+            response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
+            logger.error("Prune job failed for request : " + request.toString() + ")", e);
         }
         return response.build();
     }
@@ -739,8 +771,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         }
     }
 
-    public VAdminProto.AsyncOperationStatusResponse
-            handleFetchROStore(VAdminProto.FetchStoreRequest request) {
+    public VAdminProto.AsyncOperationStatusResponse handleFetchROStore(VAdminProto.FetchStoreRequest request) {
         final String fetchUrl = request.getStoreDir();
         final String storeName = request.getStoreName();
 
@@ -869,8 +900,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.AsyncOperationStatusResponse
-            handleFetchAndUpdate(VAdminProto.InitiateFetchAndUpdateRequest request) {
+    public VAdminProto.AsyncOperationStatusResponse handleFetchAndUpdate(VAdminProto.InitiateFetchAndUpdateRequest request) {
         final int nodeId = request.getNodeId();
         final List<Integer> partitionIds = request.getPartitionIdsList();
         final VoldemortFilter filter = request.hasFilter() ? getFilterFromRequest(request.getFilter(),
@@ -920,11 +950,9 @@ public class AdminServiceRequestHandler implements RequestHandler {
                             ReadOnlyStorageEngine readOnlyStorageEngine = ((ReadOnlyStorageEngine) storageEngine);
                             String destinationDir = readOnlyStorageEngine.getCurrentDirPath();
                             logger.info("Fetching files for RO store '" + storeName
-                                        + "' from node " + nodeId + " ( " + partitionIds
-                                        + " )");
+                                        + "' from node " + nodeId + " ( " + partitionIds + " )");
                             updateStatus("Fetching files for RO store '" + storeName
-                                         + "' from node " + nodeId + " ( " + partitionIds
-                                         + " )");
+                                         + "' from node " + nodeId + " ( " + partitionIds + " )");
 
                             adminClient.readonlyOps.fetchPartitionFiles(nodeId,
                                                                         storeName,
@@ -937,13 +965,11 @@ public class AdminServiceRequestHandler implements RequestHandler {
 
                         } else {
                             logger.info("Fetching entries for RW store '" + storeName
-                                        + "' from node " + nodeId + " ( " + partitionIds
-                                        + " )");
+                                        + "' from node " + nodeId + " ( " + partitionIds + " )");
                             updateStatus("Fetching entries for RW store '" + storeName
-                                         + "' from node " + nodeId + " ( " + partitionIds
-                                         + " ) ");
+                                         + "' from node " + nodeId + " ( " + partitionIds + " ) ");
 
-                            if (partitionIds.size() > 0) {
+                            if(partitionIds.size() > 0) {
                                 Iterator<Pair<ByteArray, Versioned<byte[]>>> entriesIterator = adminClient.bulkFetchOps.fetchEntries(nodeId,
                                                                                                                                      storeName,
                                                                                                                                      partitionIds,
@@ -1008,8 +1034,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.AsyncOperationStatusResponse
-            handleAsyncStatus(VAdminProto.AsyncOperationStatusRequest request) {
+    public VAdminProto.AsyncOperationStatusResponse handleAsyncStatus(VAdminProto.AsyncOperationStatusRequest request) {
         VAdminProto.AsyncOperationStatusResponse.Builder response = VAdminProto.AsyncOperationStatusResponse.newBuilder();
         try {
             int requestId = request.getRequestId();
@@ -1099,8 +1124,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.UpdateMetadataResponse
-            handleUpdateMetadata(VAdminProto.UpdateMetadataRequest request) {
+    public VAdminProto.UpdateMetadataResponse handleUpdateMetadata(VAdminProto.UpdateMetadataRequest request) {
         VAdminProto.UpdateMetadataResponse.Builder response = VAdminProto.UpdateMetadataResponse.newBuilder();
 
         try {
@@ -1122,8 +1146,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.GetMetadataResponse
-            handleGetMetadata(VAdminProto.GetMetadataRequest request) {
+    public VAdminProto.GetMetadataResponse handleGetMetadata(VAdminProto.GetMetadataRequest request) {
         VAdminProto.GetMetadataResponse.Builder response = VAdminProto.GetMetadataResponse.newBuilder();
 
         try {
@@ -1149,8 +1172,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.TruncateEntriesResponse
-            handleTruncateEntries(VAdminProto.TruncateEntriesRequest request) {
+    public VAdminProto.TruncateEntriesResponse handleTruncateEntries(VAdminProto.TruncateEntriesRequest request) {
         VAdminProto.TruncateEntriesResponse.Builder response = VAdminProto.TruncateEntriesResponse.newBuilder();
         try {
             String storeName = request.getStore();
@@ -1167,8 +1189,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.DeleteStoreResponse
-            handleDeleteStore(VAdminProto.DeleteStoreRequest request) {
+    public VAdminProto.DeleteStoreResponse handleDeleteStore(VAdminProto.DeleteStoreRequest request) {
         VAdminProto.DeleteStoreResponse.Builder response = VAdminProto.DeleteStoreResponse.newBuilder();
 
         // don't try to delete a store in the middle of rebalancing
@@ -1404,8 +1425,8 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return (ReadOnlyStorageEngine) storageEngine;
     }
 
-    static StorageEngine<ByteArray, byte[], byte[]>
-            getStorageEngine(StoreRepository storeRepository, String storeName) {
+    static StorageEngine<ByteArray, byte[], byte[]> getStorageEngine(StoreRepository storeRepository,
+                                                                     String storeName) {
         StorageEngine<ByteArray, byte[], byte[]> storageEngine = storeRepository.getStorageEngine(storeName);
 
         if(storageEngine == null) {
@@ -1415,8 +1436,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return storageEngine;
     }
 
-    public VAdminProto.AsyncOperationStatusResponse
-            handleNativeBackup(VAdminProto.NativeBackupRequest request) {
+    public VAdminProto.AsyncOperationStatusResponse handleNativeBackup(VAdminProto.NativeBackupRequest request) {
         final File backupDir = new File(request.getBackupDir());
         final boolean isIncremental = request.getIncremental();
         final boolean verifyFiles = request.getVerifyFiles();
@@ -1468,8 +1488,7 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.ReserveMemoryResponse
-            handleReserveMemory(VAdminProto.ReserveMemoryRequest request) {
+    public VAdminProto.ReserveMemoryResponse handleReserveMemory(VAdminProto.ReserveMemoryRequest request) {
         VAdminProto.ReserveMemoryResponse.Builder response = VAdminProto.ReserveMemoryResponse.newBuilder();
 
         try {
