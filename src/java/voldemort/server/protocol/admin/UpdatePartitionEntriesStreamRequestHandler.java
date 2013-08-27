@@ -26,12 +26,18 @@ import voldemort.utils.ByteArray;
 import voldemort.utils.ByteUtils;
 import voldemort.utils.EventThrottler;
 import voldemort.utils.NetworkClassLoader;
+import voldemort.utils.Time;
+import voldemort.utils.Utils;
 import voldemort.versioning.ObsoleteVersionException;
 import voldemort.versioning.Versioned;
 
 /**
  * UpdatePartitionEntriesStreamRequestHandler implements the streaming logic for
  * updating partition entries.
+ * 
+ * This is the base class, which simply reads a versioned entry from network and
+ * issues a storage engine put.
+ * 
  */
 
 public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequestHandler {
@@ -84,15 +90,6 @@ public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequest
     }
 
     @Override
-    protected void finalize() {
-        // when the object is GCed, don't forget to end the batch-write mode.
-        // This is ugly. But the cleanest way to do this, given our network code
-        // does not guarantee that close() will always be called
-        if(!isBatchWriteOff.get())
-            storageEngine.endBatchModifications();
-    }
-
-    @Override
     public StreamRequestHandlerState handleRequest(DataInputStream inputStream,
                                                    DataOutputStream outputStream)
             throws IOException {
@@ -112,15 +109,15 @@ public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequest
 
             if(size == -1) {
                 long totalTime = (System.currentTimeMillis() - startTime) / 1000;
-                logger.info("Update entries successfully updated " + counter
+                logger.info(getHandlerName() + " successfully updated " + counter
                             + " entries for store '" + storageEngine.getName() + "' in "
                             + totalTime + " s");
 
                 if(logger.isTraceEnabled())
                     logger.trace("Message size -1, completed partition update");
                 if(streamStats != null)
-                    streamStats.reportNetworkTime(Operation.UPDATE_ENTRIES, System.nanoTime()
-                                                                            - startNs);
+                    streamStats.reportNetworkTime(Operation.UPDATE_ENTRIES,
+                                                  Utils.elapsedTimeNs(startNs, System.nanoTime()));
                 return StreamRequestHandlerState.COMPLETE;
             }
 
@@ -138,8 +135,8 @@ public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequest
                 return StreamRequestHandlerState.INCOMPLETE_READ;
             } finally {
                 if(streamStats != null)
-                    streamStats.reportNetworkTime(Operation.UPDATE_ENTRIES, System.nanoTime()
-                                                                            - startNs);
+                    streamStats.reportNetworkTime(Operation.UPDATE_ENTRIES,
+                                                  Utils.elapsedTimeNs(startNs, System.nanoTime()));
             }
 
             VAdminProto.UpdatePartitionEntriesRequest.Builder builder = VAdminProto.UpdatePartitionEntriesRequest.newBuilder();
@@ -154,32 +151,28 @@ public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequest
         if(filter.accept(key, value)) {
             startNs = System.nanoTime();
             try {
-                storageEngine.put(key, value, null);
-
+                processEntry(key, value);
                 if(logger.isTraceEnabled())
-                    logger.trace("updateEntries (Streaming put) successful");
+                    logger.trace(getHandlerName() + " (Streaming put) successful");
             } catch(ObsoleteVersionException e) {
                 // log and ignore
                 if(logger.isDebugEnabled())
-                    logger.debug("updateEntries (Streaming put) threw ObsoleteVersionException, Ignoring.");
+                    logger.debug(getHandlerName()
+                                 + " (Streaming put) threw ObsoleteVersionException, Ignoring.");
             } finally {
-                if(streamStats != null)
+                if(streamStats != null) {
+                    streamStats.reportStreamingPut(Operation.UPDATE_ENTRIES);
                     streamStats.reportStorageTime(Operation.UPDATE_ENTRIES, System.nanoTime()
                                                                             - startNs);
+                }
             }
-
             throttler.maybeThrottle(key.length() + AdminServiceRequestHandler.valueSize(value));
         }
-
         // log progress
         counter++;
-        if(streamStats != null)
-            streamStats.reportStreamingPut(Operation.UPDATE_ENTRIES);
-
         if(0 == counter % STAT_RECORDS_INTERVAL) {
-            long totalTime = (System.currentTimeMillis() - startTime) / 1000;
-
-            logger.info("Update entries updated " + counter + " entries for store '"
+            long totalTime = (System.currentTimeMillis() - startTime) / Time.MS_PER_SECOND;
+            logger.info(getHandlerName() + " updated " + counter + " entries for store '"
                         + storageEngine.getName() + "' in " + totalTime + " s");
         }
 
@@ -203,6 +196,26 @@ public class UpdatePartitionEntriesStreamRequestHandler implements StreamRequest
     public void handleError(DataOutputStream outputStream, VoldemortException e) throws IOException {
         responseBuilder.setError(ProtoUtils.encodeError(errorCodeMapper, e));
         if(logger.isEnabledFor(Level.ERROR))
-            logger.error("handleUpdatePartitionEntries failed for request(" + request + ")", e);
+            logger.error(getHandlerName() + " handleUpdatePartitionEntries failed for request("
+                         + request + ")", e);
+    }
+
+    @Override
+    protected void finalize() {
+        // when the object is GCed, don't forget to end the batch-write mode, if
+        // not done already. After closer inspection of code, it seems like
+        // close() will always be called. But, just doing this for safety.
+        if(!isBatchWriteOff.get()) {
+            storageEngine.endBatchModifications();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    protected void processEntry(ByteArray key, Versioned<byte[]> value) throws IOException {
+        storageEngine.put(key, value, null);
+    }
+
+    protected String getHandlerName() {
+        return "UpdateEntries";
     }
 }
