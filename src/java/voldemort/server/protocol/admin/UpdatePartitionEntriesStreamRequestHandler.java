@@ -35,8 +35,14 @@ import voldemort.versioning.Versioned;
  * UpdatePartitionEntriesStreamRequestHandler implements the streaming logic for
  * updating partition entries.
  * 
- * This is the base class, which simply reads a versioned entry from network and
- * issues a storage engine put.
+ * This is the base class, which abstracts network IO to get an entry off the
+ * wire, and provides a hook
+ * {@link UpdatePartitionEntriesStreamRequestHandler#processEntry(ByteArray, Versioned)}
+ * to implement custom logic (if needed) to manage how the entry will be written
+ * to storage.
+ * 
+ * The default implementation of processEntry(..) simply issues a storage engine
+ * put.
  * 
  */
 
