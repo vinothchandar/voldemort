@@ -33,7 +33,7 @@ public final class VAdminProto {
     FAILED_FETCH_STORE(20, 22),
     GET_RO_STORAGE_FORMAT(21, 23),
     REBALANCE_STATE_CHANGE(22, 24),
-    REPAIR_JOB(23, 25),
+    ORPHAN_DATA_PURGE_JOB(23, 25),
     DELETE_STORE_REBALANCE_STATE(24, 27),
     NATIVE_BACKUP(25, 28),
     RESERVE_MEMORY(26, 29),
@@ -68,7 +68,7 @@ public final class VAdminProto {
         case 22: return FAILED_FETCH_STORE;
         case 23: return GET_RO_STORAGE_FORMAT;
         case 24: return REBALANCE_STATE_CHANGE;
-        case 25: return REPAIR_JOB;
+        case 25: return ORPHAN_DATA_PURGE_JOB;
         case 27: return DELETE_STORE_REBALANCE_STATE;
         case 28: return NATIVE_BACKUP;
         case 29: return RESERVE_MEMORY;
@@ -103,7 +103,7 @@ public final class VAdminProto {
     }
     
     private static final AdminRequestType[] VALUES = {
-      GET_METADATA, UPDATE_METADATA, UPDATE_PARTITION_ENTRIES, FETCH_PARTITION_ENTRIES, DELETE_PARTITION_ENTRIES, INITIATE_FETCH_AND_UPDATE, ASYNC_OPERATION_STATUS, INITIATE_REBALANCE_NODE, ASYNC_OPERATION_STOP, ASYNC_OPERATION_LIST, TRUNCATE_ENTRIES, ADD_STORE, DELETE_STORE, FETCH_STORE, SWAP_STORE, ROLLBACK_STORE, GET_RO_MAX_VERSION_DIR, GET_RO_CURRENT_VERSION_DIR, FETCH_PARTITION_FILES, UPDATE_SLOP_ENTRIES, FAILED_FETCH_STORE, GET_RO_STORAGE_FORMAT, REBALANCE_STATE_CHANGE, REPAIR_JOB, DELETE_STORE_REBALANCE_STATE, NATIVE_BACKUP, RESERVE_MEMORY, PRUNE_JOB, 
+      GET_METADATA, UPDATE_METADATA, UPDATE_PARTITION_ENTRIES, FETCH_PARTITION_ENTRIES, DELETE_PARTITION_ENTRIES, INITIATE_FETCH_AND_UPDATE, ASYNC_OPERATION_STATUS, INITIATE_REBALANCE_NODE, ASYNC_OPERATION_STOP, ASYNC_OPERATION_LIST, TRUNCATE_ENTRIES, ADD_STORE, DELETE_STORE, FETCH_STORE, SWAP_STORE, ROLLBACK_STORE, GET_RO_MAX_VERSION_DIR, GET_RO_CURRENT_VERSION_DIR, FETCH_PARTITION_FILES, UPDATE_SLOP_ENTRIES, FAILED_FETCH_STORE, GET_RO_STORAGE_FORMAT, REBALANCE_STATE_CHANGE, ORPHAN_DATA_PURGE_JOB, DELETE_STORE_REBALANCE_STATE, NATIVE_BACKUP, RESERVE_MEMORY, PRUNE_JOB, 
     };
     public static AdminRequestType valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
@@ -15226,31 +15226,31 @@ public final class VAdminProto {
     // @@protoc_insertion_point(class_scope:voldemort.RollbackStoreResponse)
   }
   
-  public static final class RepairJobRequest extends
+  public static final class OrphanDataPurgeJobRequest extends
       com.google.protobuf.GeneratedMessage {
-    // Use RepairJobRequest.newBuilder() to construct.
-    private RepairJobRequest() {
+    // Use OrphanDataPurgeJobRequest.newBuilder() to construct.
+    private OrphanDataPurgeJobRequest() {
       initFields();
     }
-    private RepairJobRequest(boolean noInit) {}
+    private OrphanDataPurgeJobRequest(boolean noInit) {}
     
-    private static final RepairJobRequest defaultInstance;
-    public static RepairJobRequest getDefaultInstance() {
+    private static final OrphanDataPurgeJobRequest defaultInstance;
+    public static OrphanDataPurgeJobRequest getDefaultInstance() {
       return defaultInstance;
     }
     
-    public RepairJobRequest getDefaultInstanceForType() {
+    public OrphanDataPurgeJobRequest getDefaultInstanceForType() {
       return defaultInstance;
     }
     
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_RepairJobRequest_descriptor;
+      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_OrphanDataPurgeJobRequest_descriptor;
     }
     
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_RepairJobRequest_fieldAccessorTable;
+      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_OrphanDataPurgeJobRequest_fieldAccessorTable;
     }
     
     // optional string store_name = 1;
@@ -15290,41 +15290,41 @@ public final class VAdminProto {
       return size;
     }
     
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(byte[] data)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(java.io.InputStream input)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseDelimitedFrom(java.io.InputStream input)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       Builder builder = newBuilder();
       if (builder.mergeDelimitedFrom(input)) {
@@ -15333,7 +15333,7 @@ public final class VAdminProto {
         return null;
       }
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseDelimitedFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -15344,12 +15344,12 @@ public final class VAdminProto {
         return null;
       }
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobRequest parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -15359,25 +15359,25 @@ public final class VAdminProto {
     
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(voldemort.client.protocol.pb.VAdminProto.RepairJobRequest prototype) {
+    public static Builder newBuilder(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
     
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private voldemort.client.protocol.pb.VAdminProto.RepairJobRequest result;
+      private voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest result;
       
-      // Construct using voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.newBuilder()
+      // Construct using voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.newBuilder()
       private Builder() {}
       
       private static Builder create() {
         Builder builder = new Builder();
-        builder.result = new voldemort.client.protocol.pb.VAdminProto.RepairJobRequest();
+        builder.result = new voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest();
         return builder;
       }
       
-      protected voldemort.client.protocol.pb.VAdminProto.RepairJobRequest internalGetResult() {
+      protected voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest internalGetResult() {
         return result;
       }
       
@@ -15386,7 +15386,7 @@ public final class VAdminProto {
           throw new IllegalStateException(
             "Cannot call clear() after build().");
         }
-        result = new voldemort.client.protocol.pb.VAdminProto.RepairJobRequest();
+        result = new voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest();
         return this;
       }
       
@@ -15396,24 +15396,24 @@ public final class VAdminProto {
       
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDescriptor();
+        return voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDescriptor();
       }
       
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobRequest getDefaultInstanceForType() {
-        return voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDefaultInstance();
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest getDefaultInstanceForType() {
+        return voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDefaultInstance();
       }
       
       public boolean isInitialized() {
         return result.isInitialized();
       }
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobRequest build() {
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest build() {
         if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return buildPartial();
       }
       
-      private voldemort.client.protocol.pb.VAdminProto.RepairJobRequest buildParsed()
+      private voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw newUninitializedMessageException(
@@ -15422,27 +15422,27 @@ public final class VAdminProto {
         return buildPartial();
       }
       
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobRequest buildPartial() {
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest buildPartial() {
         if (result == null) {
           throw new IllegalStateException(
             "build() has already been called on this Builder.");
         }
-        voldemort.client.protocol.pb.VAdminProto.RepairJobRequest returnMe = result;
+        voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest returnMe = result;
         result = null;
         return returnMe;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof voldemort.client.protocol.pb.VAdminProto.RepairJobRequest) {
-          return mergeFrom((voldemort.client.protocol.pb.VAdminProto.RepairJobRequest)other);
+        if (other instanceof voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest) {
+          return mergeFrom((voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
       
-      public Builder mergeFrom(voldemort.client.protocol.pb.VAdminProto.RepairJobRequest other) {
-        if (other == voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDefaultInstance()) return this;
+      public Builder mergeFrom(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest other) {
+        if (other == voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDefaultInstance()) return this;
         if (other.hasStoreName()) {
           setStoreName(other.getStoreName());
         }
@@ -15501,43 +15501,43 @@ public final class VAdminProto {
         return this;
       }
       
-      // @@protoc_insertion_point(builder_scope:voldemort.RepairJobRequest)
+      // @@protoc_insertion_point(builder_scope:voldemort.OrphanDataPurgeJobRequest)
     }
     
     static {
-      defaultInstance = new RepairJobRequest(true);
+      defaultInstance = new OrphanDataPurgeJobRequest(true);
       voldemort.client.protocol.pb.VAdminProto.internalForceInit();
       defaultInstance.initFields();
     }
     
-    // @@protoc_insertion_point(class_scope:voldemort.RepairJobRequest)
+    // @@protoc_insertion_point(class_scope:voldemort.OrphanDataPurgeJobRequest)
   }
   
-  public static final class RepairJobResponse extends
+  public static final class OrphanDataPurgeJobResponse extends
       com.google.protobuf.GeneratedMessage {
-    // Use RepairJobResponse.newBuilder() to construct.
-    private RepairJobResponse() {
+    // Use OrphanDataPurgeJobResponse.newBuilder() to construct.
+    private OrphanDataPurgeJobResponse() {
       initFields();
     }
-    private RepairJobResponse(boolean noInit) {}
+    private OrphanDataPurgeJobResponse(boolean noInit) {}
     
-    private static final RepairJobResponse defaultInstance;
-    public static RepairJobResponse getDefaultInstance() {
+    private static final OrphanDataPurgeJobResponse defaultInstance;
+    public static OrphanDataPurgeJobResponse getDefaultInstance() {
       return defaultInstance;
     }
     
-    public RepairJobResponse getDefaultInstanceForType() {
+    public OrphanDataPurgeJobResponse getDefaultInstanceForType() {
       return defaultInstance;
     }
     
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_RepairJobResponse_descriptor;
+      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_OrphanDataPurgeJobResponse_descriptor;
     }
     
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_RepairJobResponse_fieldAccessorTable;
+      return voldemort.client.protocol.pb.VAdminProto.internal_static_voldemort_OrphanDataPurgeJobResponse_fieldAccessorTable;
     }
     
     // optional .voldemort.Error error = 1;
@@ -15581,41 +15581,41 @@ public final class VAdminProto {
       return size;
     }
     
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(byte[] data)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(java.io.InputStream input)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
                .buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseDelimitedFrom(java.io.InputStream input)
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       Builder builder = newBuilder();
       if (builder.mergeDelimitedFrom(input)) {
@@ -15624,7 +15624,7 @@ public final class VAdminProto {
         return null;
       }
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseDelimitedFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -15635,12 +15635,12 @@ public final class VAdminProto {
         return null;
       }
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static voldemort.client.protocol.pb.VAdminProto.RepairJobResponse parseFrom(
+    public static voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -15650,25 +15650,25 @@ public final class VAdminProto {
     
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(voldemort.client.protocol.pb.VAdminProto.RepairJobResponse prototype) {
+    public static Builder newBuilder(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
     
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private voldemort.client.protocol.pb.VAdminProto.RepairJobResponse result;
+      private voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse result;
       
-      // Construct using voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.newBuilder()
+      // Construct using voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.newBuilder()
       private Builder() {}
       
       private static Builder create() {
         Builder builder = new Builder();
-        builder.result = new voldemort.client.protocol.pb.VAdminProto.RepairJobResponse();
+        builder.result = new voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse();
         return builder;
       }
       
-      protected voldemort.client.protocol.pb.VAdminProto.RepairJobResponse internalGetResult() {
+      protected voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse internalGetResult() {
         return result;
       }
       
@@ -15677,7 +15677,7 @@ public final class VAdminProto {
           throw new IllegalStateException(
             "Cannot call clear() after build().");
         }
-        result = new voldemort.client.protocol.pb.VAdminProto.RepairJobResponse();
+        result = new voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse();
         return this;
       }
       
@@ -15687,24 +15687,24 @@ public final class VAdminProto {
       
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.getDescriptor();
+        return voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.getDescriptor();
       }
       
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobResponse getDefaultInstanceForType() {
-        return voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.getDefaultInstance();
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse getDefaultInstanceForType() {
+        return voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.getDefaultInstance();
       }
       
       public boolean isInitialized() {
         return result.isInitialized();
       }
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobResponse build() {
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse build() {
         if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return buildPartial();
       }
       
-      private voldemort.client.protocol.pb.VAdminProto.RepairJobResponse buildParsed()
+      private voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw newUninitializedMessageException(
@@ -15713,27 +15713,27 @@ public final class VAdminProto {
         return buildPartial();
       }
       
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobResponse buildPartial() {
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse buildPartial() {
         if (result == null) {
           throw new IllegalStateException(
             "build() has already been called on this Builder.");
         }
-        voldemort.client.protocol.pb.VAdminProto.RepairJobResponse returnMe = result;
+        voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse returnMe = result;
         result = null;
         return returnMe;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof voldemort.client.protocol.pb.VAdminProto.RepairJobResponse) {
-          return mergeFrom((voldemort.client.protocol.pb.VAdminProto.RepairJobResponse)other);
+        if (other instanceof voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse) {
+          return mergeFrom((voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
       
-      public Builder mergeFrom(voldemort.client.protocol.pb.VAdminProto.RepairJobResponse other) {
-        if (other == voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.getDefaultInstance()) return this;
+      public Builder mergeFrom(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse other) {
+        if (other == voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.getDefaultInstance()) return this;
         if (other.hasError()) {
           mergeError(other.getError());
         }
@@ -15813,16 +15813,16 @@ public final class VAdminProto {
         return this;
       }
       
-      // @@protoc_insertion_point(builder_scope:voldemort.RepairJobResponse)
+      // @@protoc_insertion_point(builder_scope:voldemort.OrphanDataPurgeJobResponse)
     }
     
     static {
-      defaultInstance = new RepairJobResponse(true);
+      defaultInstance = new OrphanDataPurgeJobResponse(true);
       voldemort.client.protocol.pb.VAdminProto.internalForceInit();
       defaultInstance.initFields();
     }
     
-    // @@protoc_insertion_point(class_scope:voldemort.RepairJobResponse)
+    // @@protoc_insertion_point(class_scope:voldemort.OrphanDataPurgeJobResponse)
   }
   
   public static final class PruneJobRequest extends
@@ -22348,12 +22348,12 @@ public final class VAdminProto {
     public boolean hasRebalanceStateChange() { return hasRebalanceStateChange; }
     public voldemort.client.protocol.pb.VAdminProto.RebalanceStateChangeRequest getRebalanceStateChange() { return rebalanceStateChange_; }
     
-    // optional .voldemort.RepairJobRequest repair_job = 27;
-    public static final int REPAIR_JOB_FIELD_NUMBER = 27;
-    private boolean hasRepairJob;
-    private voldemort.client.protocol.pb.VAdminProto.RepairJobRequest repairJob_;
-    public boolean hasRepairJob() { return hasRepairJob; }
-    public voldemort.client.protocol.pb.VAdminProto.RepairJobRequest getRepairJob() { return repairJob_; }
+    // optional .voldemort.OrphanDataPurgeJobRequest orphan_data_purge_job = 27;
+    public static final int ORPHAN_DATA_PURGE_JOB_FIELD_NUMBER = 27;
+    private boolean hasOrphanDataPurgeJob;
+    private voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest orphanDataPurgeJob_;
+    public boolean hasOrphanDataPurgeJob() { return hasOrphanDataPurgeJob; }
+    public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest getOrphanDataPurgeJob() { return orphanDataPurgeJob_; }
     
     // optional .voldemort.DeleteStoreRebalanceStateRequest delete_store_rebalance_state = 29;
     public static final int DELETE_STORE_REBALANCE_STATE_FIELD_NUMBER = 29;
@@ -22408,7 +22408,7 @@ public final class VAdminProto {
       failedFetchStore_ = voldemort.client.protocol.pb.VAdminProto.FailedFetchStoreRequest.getDefaultInstance();
       getRoStorageFormat_ = voldemort.client.protocol.pb.VAdminProto.GetROStorageFormatRequest.getDefaultInstance();
       rebalanceStateChange_ = voldemort.client.protocol.pb.VAdminProto.RebalanceStateChangeRequest.getDefaultInstance();
-      repairJob_ = voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDefaultInstance();
+      orphanDataPurgeJob_ = voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDefaultInstance();
       deleteStoreRebalanceState_ = voldemort.client.protocol.pb.VAdminProto.DeleteStoreRebalanceStateRequest.getDefaultInstance();
       nativeBackup_ = voldemort.client.protocol.pb.VAdminProto.NativeBackupRequest.getDefaultInstance();
       reserveMemory_ = voldemort.client.protocol.pb.VAdminProto.ReserveMemoryRequest.getDefaultInstance();
@@ -22563,8 +22563,8 @@ public final class VAdminProto {
       if (hasRebalanceStateChange()) {
         output.writeMessage(26, getRebalanceStateChange());
       }
-      if (hasRepairJob()) {
-        output.writeMessage(27, getRepairJob());
+      if (hasOrphanDataPurgeJob()) {
+        output.writeMessage(27, getOrphanDataPurgeJob());
       }
       if (hasDeleteStoreRebalanceState()) {
         output.writeMessage(29, getDeleteStoreRebalanceState());
@@ -22683,9 +22683,9 @@ public final class VAdminProto {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(26, getRebalanceStateChange());
       }
-      if (hasRepairJob()) {
+      if (hasOrphanDataPurgeJob()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(27, getRepairJob());
+          .computeMessageSize(27, getOrphanDataPurgeJob());
       }
       if (hasDeleteStoreRebalanceState()) {
         size += com.google.protobuf.CodedOutputStream
@@ -22933,8 +22933,8 @@ public final class VAdminProto {
         if (other.hasRebalanceStateChange()) {
           mergeRebalanceStateChange(other.getRebalanceStateChange());
         }
-        if (other.hasRepairJob()) {
-          mergeRepairJob(other.getRepairJob());
+        if (other.hasOrphanDataPurgeJob()) {
+          mergeOrphanDataPurgeJob(other.getOrphanDataPurgeJob());
         }
         if (other.hasDeleteStoreRebalanceState()) {
           mergeDeleteStoreRebalanceState(other.getDeleteStoreRebalanceState());
@@ -23191,12 +23191,12 @@ public final class VAdminProto {
               break;
             }
             case 218: {
-              voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.Builder subBuilder = voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.newBuilder();
-              if (hasRepairJob()) {
-                subBuilder.mergeFrom(getRepairJob());
+              voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.Builder subBuilder = voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.newBuilder();
+              if (hasOrphanDataPurgeJob()) {
+                subBuilder.mergeFrom(getOrphanDataPurgeJob());
               }
               input.readMessage(subBuilder, extensionRegistry);
-              setRepairJob(subBuilder.buildPartial());
+              setOrphanDataPurgeJob(subBuilder.buildPartial());
               break;
             }
             case 234: {
@@ -24112,40 +24112,40 @@ public final class VAdminProto {
         return this;
       }
       
-      // optional .voldemort.RepairJobRequest repair_job = 27;
-      public boolean hasRepairJob() {
-        return result.hasRepairJob();
+      // optional .voldemort.OrphanDataPurgeJobRequest orphan_data_purge_job = 27;
+      public boolean hasOrphanDataPurgeJob() {
+        return result.hasOrphanDataPurgeJob();
       }
-      public voldemort.client.protocol.pb.VAdminProto.RepairJobRequest getRepairJob() {
-        return result.getRepairJob();
+      public voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest getOrphanDataPurgeJob() {
+        return result.getOrphanDataPurgeJob();
       }
-      public Builder setRepairJob(voldemort.client.protocol.pb.VAdminProto.RepairJobRequest value) {
+      public Builder setOrphanDataPurgeJob(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest value) {
         if (value == null) {
           throw new NullPointerException();
         }
-        result.hasRepairJob = true;
-        result.repairJob_ = value;
+        result.hasOrphanDataPurgeJob = true;
+        result.orphanDataPurgeJob_ = value;
         return this;
       }
-      public Builder setRepairJob(voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.Builder builderForValue) {
-        result.hasRepairJob = true;
-        result.repairJob_ = builderForValue.build();
+      public Builder setOrphanDataPurgeJob(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.Builder builderForValue) {
+        result.hasOrphanDataPurgeJob = true;
+        result.orphanDataPurgeJob_ = builderForValue.build();
         return this;
       }
-      public Builder mergeRepairJob(voldemort.client.protocol.pb.VAdminProto.RepairJobRequest value) {
-        if (result.hasRepairJob() &&
-            result.repairJob_ != voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDefaultInstance()) {
-          result.repairJob_ =
-            voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.newBuilder(result.repairJob_).mergeFrom(value).buildPartial();
+      public Builder mergeOrphanDataPurgeJob(voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest value) {
+        if (result.hasOrphanDataPurgeJob() &&
+            result.orphanDataPurgeJob_ != voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDefaultInstance()) {
+          result.orphanDataPurgeJob_ =
+            voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.newBuilder(result.orphanDataPurgeJob_).mergeFrom(value).buildPartial();
         } else {
-          result.repairJob_ = value;
+          result.orphanDataPurgeJob_ = value;
         }
-        result.hasRepairJob = true;
+        result.hasOrphanDataPurgeJob = true;
         return this;
       }
-      public Builder clearRepairJob() {
-        result.hasRepairJob = false;
-        result.repairJob_ = voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.getDefaultInstance();
+      public Builder clearOrphanDataPurgeJob() {
+        result.hasOrphanDataPurgeJob = false;
+        result.orphanDataPurgeJob_ = voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.getDefaultInstance();
         return this;
       }
       
@@ -24515,15 +24515,15 @@ public final class VAdminProto {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_voldemort_RollbackStoreResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_voldemort_RepairJobRequest_descriptor;
+    internal_static_voldemort_OrphanDataPurgeJobRequest_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_voldemort_RepairJobRequest_fieldAccessorTable;
+      internal_static_voldemort_OrphanDataPurgeJobRequest_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_voldemort_RepairJobResponse_descriptor;
+    internal_static_voldemort_OrphanDataPurgeJobResponse_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_voldemort_RepairJobResponse_fieldAccessorTable;
+      internal_static_voldemort_OrphanDataPurgeJobResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_voldemort_PruneJobRequest_descriptor;
   private static
@@ -24723,111 +24723,113 @@ public final class VAdminProto {
       "_dir\030\002 \001(\t\"@\n\024RollbackStoreRequest\022\022\n\nst" +
       "ore_name\030\001 \002(\t\022\024\n\014push_version\030\002 \002(\003\"8\n\025" +
       "RollbackStoreResponse\022\037\n\005error\030\001 \001(\0132\020.v" +
-      "oldemort.Error\"&\n\020RepairJobRequest\022\022\n\nst" +
-      "ore_name\030\001 \001(\t\"4\n\021RepairJobResponse\022\037\n\005e" +
-      "rror\030\001 \001(\0132\020.voldemort.Error\"%\n\017PruneJob" +
-      "Request\022\022\n\nstore_name\030\001 \001(\t\"3\n\020PruneJobR" +
-      "esponse\022\037\n\005error\030\001 \001(\0132\020.voldemort.Error",
-      "\"=\n\024ROStoreVersionDirMap\022\022\n\nstore_name\030\001" +
-      " \002(\t\022\021\n\tstore_dir\030\002 \002(\t\"/\n\031GetROMaxVersi" +
-      "onDirRequest\022\022\n\nstore_name\030\001 \003(\t\"y\n\032GetR" +
-      "OMaxVersionDirResponse\022:\n\021ro_store_versi" +
-      "ons\030\001 \003(\0132\037.voldemort.ROStoreVersionDirM" +
-      "ap\022\037\n\005error\030\002 \001(\0132\020.voldemort.Error\"3\n\035G" +
-      "etROCurrentVersionDirRequest\022\022\n\nstore_na" +
-      "me\030\001 \003(\t\"}\n\036GetROCurrentVersionDirRespon" +
-      "se\022:\n\021ro_store_versions\030\001 \003(\0132\037.voldemor" +
-      "t.ROStoreVersionDirMap\022\037\n\005error\030\002 \001(\0132\020.",
-      "voldemort.Error\"/\n\031GetROStorageFormatReq" +
-      "uest\022\022\n\nstore_name\030\001 \003(\t\"y\n\032GetROStorage" +
-      "FormatResponse\022:\n\021ro_store_versions\030\001 \003(" +
-      "\0132\037.voldemort.ROStoreVersionDirMap\022\037\n\005er" +
-      "ror\030\002 \001(\0132\020.voldemort.Error\"@\n\027FailedFet" +
-      "chStoreRequest\022\022\n\nstore_name\030\001 \002(\t\022\021\n\tst" +
-      "ore_dir\030\002 \002(\t\";\n\030FailedFetchStoreRespons" +
-      "e\022\037\n\005error\030\001 \001(\0132\020.voldemort.Error\"\356\001\n\033R" +
-      "ebalanceStateChangeRequest\022<\n\023rebalance_" +
-      "task_list\030\001 \003(\0132\037.voldemort.RebalanceTas",
-      "kInfoMap\022\026\n\016cluster_string\030\002 \002(\t\022\025\n\rstor" +
-      "es_string\030\003 \002(\t\022\017\n\007swap_ro\030\004 \002(\010\022\037\n\027chan" +
-      "ge_cluster_metadata\030\005 \002(\010\022\036\n\026change_reba" +
-      "lance_state\030\006 \002(\010\022\020\n\010rollback\030\007 \002(\010\"?\n\034R" +
-      "ebalanceStateChangeResponse\022\037\n\005error\030\001 \001" +
-      "(\0132\020.voldemort.Error\"G\n DeleteStoreRebal" +
-      "anceStateRequest\022\022\n\nstore_name\030\001 \002(\t\022\017\n\007" +
-      "node_id\030\002 \002(\005\"D\n!DeleteStoreRebalanceSta" +
-      "teResponse\022\037\n\005error\030\001 \001(\0132\020.voldemort.Er" +
-      "ror\"h\n\023NativeBackupRequest\022\022\n\nstore_name",
-      "\030\001 \002(\t\022\022\n\nbackup_dir\030\002 \002(\t\022\024\n\014verify_fil" +
-      "es\030\003 \002(\010\022\023\n\013incremental\030\004 \002(\010\">\n\024Reserve" +
-      "MemoryRequest\022\022\n\nstore_name\030\001 \002(\t\022\022\n\nsiz" +
-      "e_in_mb\030\002 \002(\003\"8\n\025ReserveMemoryResponse\022\037" +
-      "\n\005error\030\001 \001(\0132\020.voldemort.Error\"\305\016\n\025Vold" +
-      "emortAdminRequest\022)\n\004type\030\001 \002(\0162\033.voldem" +
-      "ort.AdminRequestType\0223\n\014get_metadata\030\002 \001" +
-      "(\0132\035.voldemort.GetMetadataRequest\0229\n\017upd" +
-      "ate_metadata\030\003 \001(\0132 .voldemort.UpdateMet" +
-      "adataRequest\022J\n\030update_partition_entries",
-      "\030\004 \001(\0132(.voldemort.UpdatePartitionEntrie" +
-      "sRequest\022H\n\027fetch_partition_entries\030\005 \001(" +
-      "\0132\'.voldemort.FetchPartitionEntriesReque" +
-      "st\022J\n\030delete_partition_entries\030\006 \001(\0132(.v" +
-      "oldemort.DeletePartitionEntriesRequest\022K" +
-      "\n\031initiate_fetch_and_update\030\007 \001(\0132(.vold" +
-      "emort.InitiateFetchAndUpdateRequest\022F\n\026a" +
-      "sync_operation_status\030\010 \001(\0132&.voldemort." +
-      "AsyncOperationStatusRequest\022H\n\027initiate_" +
-      "rebalance_node\030\t \001(\0132\'.voldemort.Initiat",
-      "eRebalanceNodeRequest\022B\n\024async_operation" +
-      "_stop\030\n \001(\0132$.voldemort.AsyncOperationSt" +
-      "opRequest\022B\n\024async_operation_list\030\013 \001(\0132" +
-      "$.voldemort.AsyncOperationListRequest\022;\n" +
-      "\020truncate_entries\030\014 \001(\0132!.voldemort.Trun" +
-      "cateEntriesRequest\022-\n\tadd_store\030\r \001(\0132\032." +
-      "voldemort.AddStoreRequest\0223\n\014delete_stor" +
-      "e\030\016 \001(\0132\035.voldemort.DeleteStoreRequest\0221" +
-      "\n\013fetch_store\030\017 \001(\0132\034.voldemort.FetchSto" +
-      "reRequest\022/\n\nswap_store\030\020 \001(\0132\033.voldemor",
-      "t.SwapStoreRequest\0227\n\016rollback_store\030\021 \001" +
-      "(\0132\037.voldemort.RollbackStoreRequest\022D\n\026g" +
-      "et_ro_max_version_dir\030\022 \001(\0132$.voldemort." +
-      "GetROMaxVersionDirRequest\022L\n\032get_ro_curr" +
-      "ent_version_dir\030\023 \001(\0132(.voldemort.GetROC" +
-      "urrentVersionDirRequest\022D\n\025fetch_partiti" +
-      "on_files\030\024 \001(\0132%.voldemort.FetchPartitio" +
-      "nFilesRequest\022@\n\023update_slop_entries\030\026 \001" +
-      "(\0132#.voldemort.UpdateSlopEntriesRequest\022" +
-      ">\n\022failed_fetch_store\030\030 \001(\0132\".voldemort.",
-      "FailedFetchStoreRequest\022C\n\025get_ro_storag" +
-      "e_format\030\031 \001(\0132$.voldemort.GetROStorageF" +
-      "ormatRequest\022F\n\026rebalance_state_change\030\032" +
-      " \001(\0132&.voldemort.RebalanceStateChangeReq" +
-      "uest\022/\n\nrepair_job\030\033 \001(\0132\033.voldemort.Rep" +
-      "airJobRequest\022Q\n\034delete_store_rebalance_" +
-      "state\030\035 \001(\0132+.voldemort.DeleteStoreRebal" +
-      "anceStateRequest\0225\n\rnative_backup\030\036 \001(\0132" +
-      "\036.voldemort.NativeBackupRequest\0227\n\016reser" +
-      "ve_memory\030\037 \001(\0132\037.voldemort.ReserveMemor",
-      "yRequest\022-\n\tprune_job\030  \001(\0132\032.voldemort." +
-      "PruneJobRequest*\261\005\n\020AdminRequestType\022\020\n\014" +
-      "GET_METADATA\020\000\022\023\n\017UPDATE_METADATA\020\001\022\034\n\030U" +
-      "PDATE_PARTITION_ENTRIES\020\002\022\033\n\027FETCH_PARTI" +
-      "TION_ENTRIES\020\003\022\034\n\030DELETE_PARTITION_ENTRI" +
-      "ES\020\004\022\035\n\031INITIATE_FETCH_AND_UPDATE\020\005\022\032\n\026A" +
-      "SYNC_OPERATION_STATUS\020\006\022\033\n\027INITIATE_REBA" +
-      "LANCE_NODE\020\007\022\030\n\024ASYNC_OPERATION_STOP\020\010\022\030" +
-      "\n\024ASYNC_OPERATION_LIST\020\t\022\024\n\020TRUNCATE_ENT" +
-      "RIES\020\n\022\r\n\tADD_STORE\020\013\022\020\n\014DELETE_STORE\020\014\022",
-      "\017\n\013FETCH_STORE\020\r\022\016\n\nSWAP_STORE\020\016\022\022\n\016ROLL" +
-      "BACK_STORE\020\017\022\032\n\026GET_RO_MAX_VERSION_DIR\020\020" +
-      "\022\036\n\032GET_RO_CURRENT_VERSION_DIR\020\021\022\031\n\025FETC" +
-      "H_PARTITION_FILES\020\022\022\027\n\023UPDATE_SLOP_ENTRI" +
-      "ES\020\024\022\026\n\022FAILED_FETCH_STORE\020\026\022\031\n\025GET_RO_S" +
-      "TORAGE_FORMAT\020\027\022\032\n\026REBALANCE_STATE_CHANG" +
-      "E\020\030\022\016\n\nREPAIR_JOB\020\031\022 \n\034DELETE_STORE_REBA" +
-      "LANCE_STATE\020\033\022\021\n\rNATIVE_BACKUP\020\034\022\022\n\016RESE" +
-      "RVE_MEMORY\020\035\022\r\n\tPRUNE_JOB\020\036B-\n\034voldemort" +
-      ".client.protocol.pbB\013VAdminProtoH\001"
+      "oldemort.Error\"/\n\031OrphanDataPurgeJobRequ" +
+      "est\022\022\n\nstore_name\030\001 \001(\t\"=\n\032OrphanDataPur" +
+      "geJobResponse\022\037\n\005error\030\001 \001(\0132\020.voldemort" +
+      ".Error\"%\n\017PruneJobRequest\022\022\n\nstore_name\030" +
+      "\001 \001(\t\"3\n\020PruneJobResponse\022\037\n\005error\030\001 \001(\013",
+      "2\020.voldemort.Error\"=\n\024ROStoreVersionDirM" +
+      "ap\022\022\n\nstore_name\030\001 \002(\t\022\021\n\tstore_dir\030\002 \002(" +
+      "\t\"/\n\031GetROMaxVersionDirRequest\022\022\n\nstore_" +
+      "name\030\001 \003(\t\"y\n\032GetROMaxVersionDirResponse" +
+      "\022:\n\021ro_store_versions\030\001 \003(\0132\037.voldemort." +
+      "ROStoreVersionDirMap\022\037\n\005error\030\002 \001(\0132\020.vo" +
+      "ldemort.Error\"3\n\035GetROCurrentVersionDirR" +
+      "equest\022\022\n\nstore_name\030\001 \003(\t\"}\n\036GetROCurre" +
+      "ntVersionDirResponse\022:\n\021ro_store_version" +
+      "s\030\001 \003(\0132\037.voldemort.ROStoreVersionDirMap",
+      "\022\037\n\005error\030\002 \001(\0132\020.voldemort.Error\"/\n\031Get" +
+      "ROStorageFormatRequest\022\022\n\nstore_name\030\001 \003" +
+      "(\t\"y\n\032GetROStorageFormatResponse\022:\n\021ro_s" +
+      "tore_versions\030\001 \003(\0132\037.voldemort.ROStoreV" +
+      "ersionDirMap\022\037\n\005error\030\002 \001(\0132\020.voldemort." +
+      "Error\"@\n\027FailedFetchStoreRequest\022\022\n\nstor" +
+      "e_name\030\001 \002(\t\022\021\n\tstore_dir\030\002 \002(\t\";\n\030Faile" +
+      "dFetchStoreResponse\022\037\n\005error\030\001 \001(\0132\020.vol" +
+      "demort.Error\"\356\001\n\033RebalanceStateChangeReq" +
+      "uest\022<\n\023rebalance_task_list\030\001 \003(\0132\037.vold",
+      "emort.RebalanceTaskInfoMap\022\026\n\016cluster_st" +
+      "ring\030\002 \002(\t\022\025\n\rstores_string\030\003 \002(\t\022\017\n\007swa" +
+      "p_ro\030\004 \002(\010\022\037\n\027change_cluster_metadata\030\005 " +
+      "\002(\010\022\036\n\026change_rebalance_state\030\006 \002(\010\022\020\n\010r" +
+      "ollback\030\007 \002(\010\"?\n\034RebalanceStateChangeRes" +
+      "ponse\022\037\n\005error\030\001 \001(\0132\020.voldemort.Error\"G" +
+      "\n DeleteStoreRebalanceStateRequest\022\022\n\nst" +
+      "ore_name\030\001 \002(\t\022\017\n\007node_id\030\002 \002(\005\"D\n!Delet" +
+      "eStoreRebalanceStateResponse\022\037\n\005error\030\001 " +
+      "\001(\0132\020.voldemort.Error\"h\n\023NativeBackupReq",
+      "uest\022\022\n\nstore_name\030\001 \002(\t\022\022\n\nbackup_dir\030\002" +
+      " \002(\t\022\024\n\014verify_files\030\003 \002(\010\022\023\n\013incrementa" +
+      "l\030\004 \002(\010\">\n\024ReserveMemoryRequest\022\022\n\nstore" +
+      "_name\030\001 \002(\t\022\022\n\nsize_in_mb\030\002 \002(\003\"8\n\025Reser" +
+      "veMemoryResponse\022\037\n\005error\030\001 \001(\0132\020.voldem" +
+      "ort.Error\"\331\016\n\025VoldemortAdminRequest\022)\n\004t" +
+      "ype\030\001 \002(\0162\033.voldemort.AdminRequestType\0223" +
+      "\n\014get_metadata\030\002 \001(\0132\035.voldemort.GetMeta" +
+      "dataRequest\0229\n\017update_metadata\030\003 \001(\0132 .v" +
+      "oldemort.UpdateMetadataRequest\022J\n\030update",
+      "_partition_entries\030\004 \001(\0132(.voldemort.Upd" +
+      "atePartitionEntriesRequest\022H\n\027fetch_part" +
+      "ition_entries\030\005 \001(\0132\'.voldemort.FetchPar" +
+      "titionEntriesRequest\022J\n\030delete_partition" +
+      "_entries\030\006 \001(\0132(.voldemort.DeletePartiti" +
+      "onEntriesRequest\022K\n\031initiate_fetch_and_u" +
+      "pdate\030\007 \001(\0132(.voldemort.InitiateFetchAnd" +
+      "UpdateRequest\022F\n\026async_operation_status\030" +
+      "\010 \001(\0132&.voldemort.AsyncOperationStatusRe" +
+      "quest\022H\n\027initiate_rebalance_node\030\t \001(\0132\'",
+      ".voldemort.InitiateRebalanceNodeRequest\022" +
+      "B\n\024async_operation_stop\030\n \001(\0132$.voldemor" +
+      "t.AsyncOperationStopRequest\022B\n\024async_ope" +
+      "ration_list\030\013 \001(\0132$.voldemort.AsyncOpera" +
+      "tionListRequest\022;\n\020truncate_entries\030\014 \001(" +
+      "\0132!.voldemort.TruncateEntriesRequest\022-\n\t" +
+      "add_store\030\r \001(\0132\032.voldemort.AddStoreRequ" +
+      "est\0223\n\014delete_store\030\016 \001(\0132\035.voldemort.De" +
+      "leteStoreRequest\0221\n\013fetch_store\030\017 \001(\0132\034." +
+      "voldemort.FetchStoreRequest\022/\n\nswap_stor",
+      "e\030\020 \001(\0132\033.voldemort.SwapStoreRequest\0227\n\016" +
+      "rollback_store\030\021 \001(\0132\037.voldemort.Rollbac" +
+      "kStoreRequest\022D\n\026get_ro_max_version_dir\030" +
+      "\022 \001(\0132$.voldemort.GetROMaxVersionDirRequ" +
+      "est\022L\n\032get_ro_current_version_dir\030\023 \001(\0132" +
+      "(.voldemort.GetROCurrentVersionDirReques" +
+      "t\022D\n\025fetch_partition_files\030\024 \001(\0132%.volde" +
+      "mort.FetchPartitionFilesRequest\022@\n\023updat" +
+      "e_slop_entries\030\026 \001(\0132#.voldemort.UpdateS" +
+      "lopEntriesRequest\022>\n\022failed_fetch_store\030",
+      "\030 \001(\0132\".voldemort.FailedFetchStoreReques" +
+      "t\022C\n\025get_ro_storage_format\030\031 \001(\0132$.volde" +
+      "mort.GetROStorageFormatRequest\022F\n\026rebala" +
+      "nce_state_change\030\032 \001(\0132&.voldemort.Rebal" +
+      "anceStateChangeRequest\022C\n\025orphan_data_pu" +
+      "rge_job\030\033 \001(\0132$.voldemort.OrphanDataPurg" +
+      "eJobRequest\022Q\n\034delete_store_rebalance_st" +
+      "ate\030\035 \001(\0132+.voldemort.DeleteStoreRebalan" +
+      "ceStateRequest\0225\n\rnative_backup\030\036 \001(\0132\036." +
+      "voldemort.NativeBackupRequest\0227\n\016reserve",
+      "_memory\030\037 \001(\0132\037.voldemort.ReserveMemoryR" +
+      "equest\022-\n\tprune_job\030  \001(\0132\032.voldemort.Pr" +
+      "uneJobRequest*\274\005\n\020AdminRequestType\022\020\n\014GE" +
+      "T_METADATA\020\000\022\023\n\017UPDATE_METADATA\020\001\022\034\n\030UPD" +
+      "ATE_PARTITION_ENTRIES\020\002\022\033\n\027FETCH_PARTITI" +
+      "ON_ENTRIES\020\003\022\034\n\030DELETE_PARTITION_ENTRIES" +
+      "\020\004\022\035\n\031INITIATE_FETCH_AND_UPDATE\020\005\022\032\n\026ASY" +
+      "NC_OPERATION_STATUS\020\006\022\033\n\027INITIATE_REBALA" +
+      "NCE_NODE\020\007\022\030\n\024ASYNC_OPERATION_STOP\020\010\022\030\n\024" +
+      "ASYNC_OPERATION_LIST\020\t\022\024\n\020TRUNCATE_ENTRI",
+      "ES\020\n\022\r\n\tADD_STORE\020\013\022\020\n\014DELETE_STORE\020\014\022\017\n" +
+      "\013FETCH_STORE\020\r\022\016\n\nSWAP_STORE\020\016\022\022\n\016ROLLBA" +
+      "CK_STORE\020\017\022\032\n\026GET_RO_MAX_VERSION_DIR\020\020\022\036" +
+      "\n\032GET_RO_CURRENT_VERSION_DIR\020\021\022\031\n\025FETCH_" +
+      "PARTITION_FILES\020\022\022\027\n\023UPDATE_SLOP_ENTRIES" +
+      "\020\024\022\026\n\022FAILED_FETCH_STORE\020\026\022\031\n\025GET_RO_STO" +
+      "RAGE_FORMAT\020\027\022\032\n\026REBALANCE_STATE_CHANGE\020" +
+      "\030\022\031\n\025ORPHAN_DATA_PURGE_JOB\020\031\022 \n\034DELETE_S" +
+      "TORE_REBALANCE_STATE\020\033\022\021\n\rNATIVE_BACKUP\020" +
+      "\034\022\022\n\016RESERVE_MEMORY\020\035\022\r\n\tPRUNE_JOB\020\036B-\n\034",
+      "voldemort.client.protocol.pbB\013VAdminProt" +
+      "oH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -25162,22 +25164,22 @@ public final class VAdminProto {
               new java.lang.String[] { "Error", },
               voldemort.client.protocol.pb.VAdminProto.RollbackStoreResponse.class,
               voldemort.client.protocol.pb.VAdminProto.RollbackStoreResponse.Builder.class);
-          internal_static_voldemort_RepairJobRequest_descriptor =
+          internal_static_voldemort_OrphanDataPurgeJobRequest_descriptor =
             getDescriptor().getMessageTypes().get(41);
-          internal_static_voldemort_RepairJobRequest_fieldAccessorTable = new
+          internal_static_voldemort_OrphanDataPurgeJobRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_voldemort_RepairJobRequest_descriptor,
+              internal_static_voldemort_OrphanDataPurgeJobRequest_descriptor,
               new java.lang.String[] { "StoreName", },
-              voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.class,
-              voldemort.client.protocol.pb.VAdminProto.RepairJobRequest.Builder.class);
-          internal_static_voldemort_RepairJobResponse_descriptor =
+              voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.class,
+              voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobRequest.Builder.class);
+          internal_static_voldemort_OrphanDataPurgeJobResponse_descriptor =
             getDescriptor().getMessageTypes().get(42);
-          internal_static_voldemort_RepairJobResponse_fieldAccessorTable = new
+          internal_static_voldemort_OrphanDataPurgeJobResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_voldemort_RepairJobResponse_descriptor,
+              internal_static_voldemort_OrphanDataPurgeJobResponse_descriptor,
               new java.lang.String[] { "Error", },
-              voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.class,
-              voldemort.client.protocol.pb.VAdminProto.RepairJobResponse.Builder.class);
+              voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.class,
+              voldemort.client.protocol.pb.VAdminProto.OrphanDataPurgeJobResponse.Builder.class);
           internal_static_voldemort_PruneJobRequest_descriptor =
             getDescriptor().getMessageTypes().get(43);
           internal_static_voldemort_PruneJobRequest_fieldAccessorTable = new
@@ -25327,7 +25329,7 @@ public final class VAdminProto {
           internal_static_voldemort_VoldemortAdminRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_voldemort_VoldemortAdminRequest_descriptor,
-              new java.lang.String[] { "Type", "GetMetadata", "UpdateMetadata", "UpdatePartitionEntries", "FetchPartitionEntries", "DeletePartitionEntries", "InitiateFetchAndUpdate", "AsyncOperationStatus", "InitiateRebalanceNode", "AsyncOperationStop", "AsyncOperationList", "TruncateEntries", "AddStore", "DeleteStore", "FetchStore", "SwapStore", "RollbackStore", "GetRoMaxVersionDir", "GetRoCurrentVersionDir", "FetchPartitionFiles", "UpdateSlopEntries", "FailedFetchStore", "GetRoStorageFormat", "RebalanceStateChange", "RepairJob", "DeleteStoreRebalanceState", "NativeBackup", "ReserveMemory", "PruneJob", },
+              new java.lang.String[] { "Type", "GetMetadata", "UpdateMetadata", "UpdatePartitionEntries", "FetchPartitionEntries", "DeletePartitionEntries", "InitiateFetchAndUpdate", "AsyncOperationStatus", "InitiateRebalanceNode", "AsyncOperationStop", "AsyncOperationList", "TruncateEntries", "AddStore", "DeleteStore", "FetchStore", "SwapStore", "RollbackStore", "GetRoMaxVersionDir", "GetRoCurrentVersionDir", "FetchPartitionFiles", "UpdateSlopEntries", "FailedFetchStore", "GetRoStorageFormat", "RebalanceStateChange", "OrphanDataPurgeJob", "DeleteStoreRebalanceState", "NativeBackup", "ReserveMemory", "PruneJob", },
               voldemort.client.protocol.pb.VAdminProto.VoldemortAdminRequest.class,
               voldemort.client.protocol.pb.VAdminProto.VoldemortAdminRequest.Builder.class);
           return null;

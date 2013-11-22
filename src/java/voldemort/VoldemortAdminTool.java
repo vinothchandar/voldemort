@@ -211,7 +211,8 @@ public class VoldemortAdminTool {
               .describedAs("job-ids")
               .withValuesSeparatedBy(',')
               .ofType(Integer.class);
-        parser.accepts("repair-job", "Clean after rebalancing is done");
+        parser.accepts("repair-job", "[REPLACED] use --purge-orphan-data");
+        parser.accepts("purge-orphan-data", "Clean after rebalancing is done");
         parser.accepts("prune-job", "Prune versioned put data, after rebalancing");
         parser.accepts("native-backup", "Perform a native backup")
               .withRequiredArg()
@@ -370,6 +371,9 @@ public class VoldemortAdminTool {
             }
             ops += "o";
         }
+        if(options.has("purge-orphan-data")) {
+            ops += "p";
+        }
         if(options.has("query-keys")) {
             ops += "q";
         }
@@ -397,7 +401,8 @@ public class VoldemortAdminTool {
             Utils.croak("At least one of (delete-partitions, restore, add-node, fetch-entries, "
                         + "fetch-keys, add-stores, delete-store, update-entries, get-metadata, ro-metadata, "
                         + "set-metadata, check-metadata, clear-rebalancing-metadata, async, "
-                        + "repair-job, native-backup, rollback, reserve-memory, mirror-url, verify-metadata-version, prune-job) must be specified");
+                        + "purge-orphan-data, native-backup, rollback, reserve-memory, mirror-url, "
+                        + "verify-metadata-version, prune-job) must be specified");
         }
 
         List<String> storeNames = null;
@@ -581,7 +586,11 @@ public class VoldemortAdminTool {
                 executeAsync(nodeId, adminClient, asyncKey, asyncIds);
             }
             if(ops.contains("l")) {
-                executeRepairJob(nodeId, adminClient);
+                Utils.croak("--repair-job has been replaced with --purge-orphan-data");
+
+            }
+            if(ops.contains("p")) {
+                executeOrphanDataPurgeJob(nodeId, adminClient);
             }
 
             if(ops.contains("j")) {
@@ -742,13 +751,13 @@ public class VoldemortAdminTool {
         }
     }
 
-    private static void executeRepairJob(Integer nodeId, AdminClient adminClient) {
+    private static void executeOrphanDataPurgeJob(Integer nodeId, AdminClient adminClient) {
         if(nodeId < 0) {
             for(Node node: adminClient.getAdminClientCluster().getNodes()) {
-                adminClient.storeMntOps.repairJob(node.getId());
+                adminClient.storeMntOps.purgeOrphanData(node.getId());
             }
         } else {
-            adminClient.storeMntOps.repairJob(nodeId);
+            adminClient.storeMntOps.purgeOrphanData(nodeId);
         }
     }
 

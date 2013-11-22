@@ -587,7 +587,7 @@ public abstract class AbstractZonedRebalanceTest extends AbstractRebalanceTest {
 
                 // Do the cleanup operation
                 for(int i = 0; i < 6; i++) {
-                    admin.storeMntOps.repairJob(i);
+                    admin.storeMntOps.purgeOrphanData(i);
                 }
                 // wait for the repairs to complete
                 for(int i = 0; i < 6; i++) {

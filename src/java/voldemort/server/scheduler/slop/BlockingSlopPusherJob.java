@@ -62,16 +62,16 @@ public class BlockingSlopPusherJob implements Runnable {
     private final MetadataStore metadataStore;
     private final FailureDetector failureDetector;
     private final long maxWriteBytesPerSec;
-    private final ScanPermitWrapper repairPermits;
+    private final ScanPermitWrapper slopScanPermits;
 
     public BlockingSlopPusherJob(StoreRepository storeRepo,
                                  MetadataStore metadataStore,
                                  FailureDetector failureDetector,
                                  VoldemortConfig voldemortConfig,
-                                 ScanPermitWrapper repairPermits) {
+                                 ScanPermitWrapper slopScanPermits) {
         this.storeRepo = storeRepo;
         this.metadataStore = metadataStore;
-        this.repairPermits = Utils.notNull(repairPermits);
+        this.slopScanPermits = Utils.notNull(slopScanPermits);
         this.failureDetector = failureDetector;
         this.maxWriteBytesPerSec = voldemortConfig.getSlopMaxWriteBytesPerSec();
     }
@@ -212,14 +212,14 @@ public class BlockingSlopPusherJob implements Runnable {
             } catch(Exception e) {
                 logger.error("Failed to close iterator.", e);
             }
-            this.repairPermits.release(this.getClass().getCanonicalName());
+            this.slopScanPermits.release(this.getClass().getCanonicalName());
         }
     }
 
     private void acquireRepairPermit() {
         logger.info("Acquiring lock to perform blocking slop pusher job ");
         try {
-            this.repairPermits.acquire(null, this.getClass().getCanonicalName());
+            this.slopScanPermits.acquire(null, this.getClass().getCanonicalName());
             logger.info("Acquired lock to perform blocking slop pusher job ");
         } catch(InterruptedException e) {
             throw new IllegalStateException("Blocking slop pusher job interrupted while waiting for permit.",

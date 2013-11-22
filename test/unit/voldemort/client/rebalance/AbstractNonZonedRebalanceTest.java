@@ -455,7 +455,7 @@ public abstract class AbstractNonZonedRebalanceTest extends AbstractRebalanceTes
 
                 // Do the cleanup operation
                 for(int i = 0; i < 3; i++) {
-                    adminClient.storeMntOps.repairJob(i);
+                    adminClient.storeMntOps.purgeOrphanData(i);
                 }
                 // wait for the repairs to complete
                 for(int i = 0; i < 3; i++) {
@@ -521,7 +521,7 @@ public abstract class AbstractNonZonedRebalanceTest extends AbstractRebalanceTes
 
                 // Do the cleanup operation
                 for(int i = 0; i < 3; i++) {
-                    adminClient.storeMntOps.repairJob(i);
+                    adminClient.storeMntOps.purgeOrphanData(i);
                 }
                 // wait for the repairs to complete
                 for(int i = 0; i < 3; i++) {

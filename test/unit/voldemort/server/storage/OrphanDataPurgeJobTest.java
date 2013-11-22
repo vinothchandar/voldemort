@@ -58,16 +58,17 @@ import voldemort.versioning.Versioned;
 import voldemort.xml.StoreDefinitionsMapper;
 
 /*
- * This class tests the repair job tool. The basic workflow is as follows : 1.
- * Start a 9 node cluster with a single322 storedef. 2. Generate 1024 random
- * <key,value> pairs and do puts of all these 1024 on all the servers. At this
- * time every server will have all the data. 3. Run the repair job on all 9
- * nodes. 4. Now, for each key check that the repair job deleted that key from
- * nodes that do not belong to the preferenceList for that key. 5. Verify that
- * the key exists on nodes that belong to preferenceList.
+ * This class tests the OrphanDataPurge job tool. The basic workflow is as
+ * follows : 1. Start a 9 node cluster with a single322 storedef. 2. Generate
+ * 1024 random <key,value> pairs and do puts of all these 1024 on all the
+ * servers. At this time every server will have all the data. 3. Run the
+ * OrphanDataPurge job on all 9 nodes. 4. Now, for each key check that the
+ * OrphanDataPurge job deleted that key from nodes that do not belong to the
+ * preferenceList for that key. 5. Verify that the key exists on nodes that
+ * belong to preferenceList.
  */
 
-public class RepairJobTest {
+public class OrphanDataPurgeJobTest {
 
     private Cluster cluster;
     private StoreRepository storeRepository;
@@ -176,7 +177,7 @@ public class RepairJobTest {
     }
 
     @Test
-    public void testRepairJob() {
+    public void testOrphanDataPurgeJob() {
         // start the servers
         setUp();
         // Create socket store
@@ -185,15 +186,15 @@ public class RepairJobTest {
         HashMap<String, String> testEntries = ServerTestUtils.createRandomKeyValueString(128);
         populateData(testEntries);
 
-        // create admin client and run repair on all nodes
+        // create admin client and run purge on all nodes
         AdminClient admin = new AdminClient(cluster, new AdminClientConfig(), new ClientConfig());
         for(int i = 0; i < 9; i++) {
-            admin.storeMntOps.repairJob(i);
+            admin.storeMntOps.purgeOrphanData(i);
         }
 
-        // wait for the repair to complete
+        // wait for the OrphanDataPurge to complete
         for(int i = 0; i < 9; i++) {
-            ServerTestUtils.waitForAsyncOperationOnServer(serverMap.get(i), "Repair", 5000);
+            ServerTestUtils.waitForAsyncOperationOnServer(serverMap.get(i), "Orphan", 5000);
         }
         BaseStoreRoutingPlan storeInstance = new BaseStoreRoutingPlan(cluster, storeDefs.get(0));
         for(Entry<String, String> entry: testEntries.entrySet()) {
@@ -201,7 +202,8 @@ public class RepairJobTest {
             List<Integer> preferenceNodes = storeInstance.getReplicationNodeList(keyBytes.get());
             List<Integer> allNodes = new ArrayList<Integer>(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8));
 
-            // Repair job should have deleted the keys on the nodes that
+            // OrphanDataPurge job should have deleted the keys on the nodes
+            // that
             // shouldn't have been
             // hosting the key. Go over all these remaining nodes to make sure
             // that it's true.
@@ -209,8 +211,10 @@ public class RepairJobTest {
             for(int nodeId: allNodes) {
                 try {
                     List<Versioned<byte[]>> retVal = storeMap.get(nodeId).get(keyBytes, null);
-                    assertEquals("Repair did not run properly as it left the key it should have"
-                                 + " deleted", retVal.isEmpty(), true);
+                    assertEquals("OrphanDataPurge did not run properly as it left the key it should have"
+                                         + " deleted",
+                                 retVal.isEmpty(),
+                                 true);
                 } catch(Exception e) {
                     // We expect a bunch of invalidmetadata exceptions as we are
                     // asking for key
@@ -218,12 +222,13 @@ public class RepairJobTest {
                     // empty.
                 }
             }
-            // The repair job should not have deleted the keys from nodes on the
+            // The OrphanDataPurge job should not have deleted the keys from
+            // nodes on the
             // pref list.
             for(int nodeId: preferenceNodes) {
                 try {
                     List<Versioned<byte[]>> retVal = storeMap.get(nodeId).get(keyBytes, null);
-                    assertEquals("Repair job has deleted keys that it should not have",
+                    assertEquals("OrphanDataPurge job has deleted keys that it should not have",
                                  retVal.isEmpty(),
                                  false);
                 } catch(Exception e) {

@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import voldemort.VoldemortException;
 import voldemort.annotations.concurrency.Threadsafe;
+import voldemort.server.storage.orphandatapurge.OrphanDataPurgeJob;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
-import voldemort.server.storage.repairjob.RepairJob;
 import voldemort.store.StorageEngine;
 import voldemort.store.Store;
 import voldemort.store.slop.SlopStorageEngine;
@@ -91,7 +91,7 @@ public class StoreRepository {
     /*
      * Repair Job object registered with StoreRepository
      */
-    private RepairJob repairJob;
+    private OrphanDataPurgeJob orphanDataPurgeJob;
 
     /**
      * Prune job object registered with StoreRepository
@@ -285,12 +285,12 @@ public class StoreRepository {
         return this.slopStore != null;
     }
 
-    public RepairJob getRepairJob() {
-        return repairJob;
+    public OrphanDataPurgeJob getOrphanDataPurgeJob() {
+        return orphanDataPurgeJob;
     }
 
-    public void registerRepairJob(RepairJob job) {
-        repairJob = job;
+    public void registerOrphanDataPurgeJob(OrphanDataPurgeJob job) {
+        orphanDataPurgeJob = job;
     }
 
     public void registerPruneJob(VersionedPutPruneJob job) {

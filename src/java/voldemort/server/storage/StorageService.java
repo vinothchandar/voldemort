@@ -64,8 +64,8 @@ import voldemort.server.VoldemortConfig;
 import voldemort.server.scheduler.DataCleanupJob;
 import voldemort.server.scheduler.slop.BlockingSlopPusherJob;
 import voldemort.server.scheduler.slop.StreamingSlopPusherJob;
+import voldemort.server.storage.orphandatapurge.OrphanDataPurgeJob;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
-import voldemort.server.storage.repairjob.RepairJob;
 import voldemort.store.StorageConfiguration;
 import voldemort.store.StorageEngine;
 import voldemort.store.Store;
@@ -345,14 +345,14 @@ public class StorageService extends AbstractService {
             }
 
             // Create a repair job object and register it with Store repository
-            if(voldemortConfig.isRepairEnabled()) {
-                logger.info("Initializing repair job.");
-                RepairJob job = new RepairJob(storeRepository,
-                                              metadata,
-                                              scanPermitWrapper,
-                                              voldemortConfig.getRepairJobMaxKeysScannedPerSec());
+            if(voldemortConfig.isOrphanDataPurgeEnabled()) {
+                logger.info("Initializing OrphanDataPurge job.");
+                OrphanDataPurgeJob job = new OrphanDataPurgeJob(storeRepository,
+                                                                metadata,
+                                                                scanPermitWrapper,
+                                                                voldemortConfig.getOrphanDataPurgeJobMaxKeysScannedPerSec());
                 JmxUtils.registerMbean(job, JmxUtils.createObjectName(job.getClass()));
-                storeRepository.registerRepairJob(job);
+                storeRepository.registerOrphanDataPurgeJob(job);
             }
 
             // Create a prune job object and register it

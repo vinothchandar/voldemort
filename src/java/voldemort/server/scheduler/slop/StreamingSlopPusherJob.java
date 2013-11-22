@@ -85,19 +85,19 @@ public class StreamingSlopPusherJob implements Runnable {
     private final Map<Integer, Set<Integer>> zoneMapping;
     private ConcurrentHashMap<Integer, Long> attemptedByNode;
     private ConcurrentHashMap<Integer, Long> succeededByNode;
-    private final ScanPermitWrapper repairPermits;
+    private final ScanPermitWrapper slopScanPermits;
     private final StreamingStats streamStats;
 
     public StreamingSlopPusherJob(StoreRepository storeRepo,
                                   MetadataStore metadataStore,
                                   FailureDetector failureDetector,
                                   VoldemortConfig voldemortConfig,
-                                  ScanPermitWrapper repairPermits) {
+                                  ScanPermitWrapper slopScanPermits) {
         this.storeRepo = storeRepo;
         this.metadataStore = metadataStore;
         this.failureDetector = failureDetector;
         this.voldemortConfig = voldemortConfig;
-        this.repairPermits = Utils.notNull(repairPermits);
+        this.slopScanPermits = Utils.notNull(slopScanPermits);
         if(voldemortConfig.isJmxEnabled()) {
             this.streamStats = storeRepo.getStreamingStats(this.storeRepo.getSlopStore().getName());
         } else {
@@ -297,7 +297,7 @@ public class StreamingSlopPusherJob implements Runnable {
             consumerResults.clear();
             slopQueues.clear();
             stopAdminClient();
-            this.repairPermits.release(this.getClass().getCanonicalName());
+            this.slopScanPermits.release(this.getClass().getCanonicalName());
         }
 
     }
@@ -404,7 +404,7 @@ public class StreamingSlopPusherJob implements Runnable {
     private void acquireRepairPermit() {
         logger.info("Acquiring lock to perform streaming slop pusher job ");
         try {
-            this.repairPermits.acquire(null, this.getClass().getCanonicalName());
+            this.slopScanPermits.acquire(null, this.getClass().getCanonicalName());
             logger.info("Acquired lock to perform streaming slop pusher job ");
         } catch(InterruptedException e) {
             stopAdminClient();

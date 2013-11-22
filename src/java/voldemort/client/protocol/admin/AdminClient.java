@@ -68,8 +68,8 @@ import voldemort.server.RequestRoutingType;
 import voldemort.server.VoldemortConfig;
 import voldemort.server.protocol.admin.AsyncOperationStatus;
 import voldemort.server.rebalance.VoldemortRebalancingException;
+import voldemort.server.storage.orphandatapurge.OrphanDataPurgeJob;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
-import voldemort.server.storage.repairjob.RepairJob;
 import voldemort.store.ErrorCodeMapper;
 import voldemort.store.Store;
 import voldemort.store.StoreDefinition;
@@ -1333,16 +1333,16 @@ public class AdminClient {
         }
 
         /**
-         * See {@link RepairJob}
+         * See {@link OrphanDataPurgeJob}
          * 
          * @param nodeId The id of the node on which to do the repair
          */
-        public void repairJob(int nodeId) {
-            VAdminProto.RepairJobRequest.Builder repairJobRequest = VAdminProto.RepairJobRequest.newBuilder();
+        public void purgeOrphanData(int nodeId) {
+            VAdminProto.OrphanDataPurgeJobRequest.Builder repairJobRequest = VAdminProto.OrphanDataPurgeJobRequest.newBuilder();
 
             VAdminProto.VoldemortAdminRequest adminRequest = VAdminProto.VoldemortAdminRequest.newBuilder()
-                                                                                              .setRepairJob(repairJobRequest)
-                                                                                              .setType(VAdminProto.AdminRequestType.REPAIR_JOB)
+                                                                                              .setOrphanDataPurgeJob(repairJobRequest)
+                                                                                              .setType(VAdminProto.AdminRequestType.ORPHAN_DATA_PURGE_JOB)
                                                                                               .build();
             Node node = AdminClient.this.getAdminClientCluster().getNodeById(nodeId);
             SocketDestination destination = new SocketDestination(node.getHost(),

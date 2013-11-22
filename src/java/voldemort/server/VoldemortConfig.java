@@ -40,8 +40,8 @@ import voldemort.server.protocol.admin.AsyncOperation;
 import voldemort.server.scheduler.DataCleanupJob;
 import voldemort.server.scheduler.slop.BlockingSlopPusherJob;
 import voldemort.server.scheduler.slop.StreamingSlopPusherJob;
+import voldemort.server.storage.orphandatapurge.OrphanDataPurgeJob;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
-import voldemort.server.storage.repairjob.RepairJob;
 import voldemort.store.InvalidMetadataException;
 import voldemort.store.StorageEngine;
 import voldemort.store.bdb.BdbStorageConfiguration;
@@ -186,7 +186,7 @@ public class VoldemortConfig implements Serializable {
 
     private boolean enableSlop;
     private boolean enableSlopPusherJob;
-    private boolean enableRepair;
+    private boolean enableOrphanDataPurge;
     private boolean enablePruneJob;
     private boolean enableHttpServer;
     private boolean enableSocketServer;
@@ -254,7 +254,7 @@ public class VoldemortConfig implements Serializable {
     private int restServiceStorageThreadPoolQueueSize;
     private int maxHttpAggregatedContentLength;
 
-    private int repairJobMaxKeysScannedPerSec;
+    private int orphanDataPurgeJobMaxKeysScannedPerSec;
     private int pruneJobMaxKeysScannedPerSec;
 
     public VoldemortConfig(Properties props) {
@@ -452,7 +452,7 @@ public class VoldemortConfig implements Serializable {
         this.enableMetadataChecking = props.getBoolean("enable.metadata.checking", true);
         this.enableGossip = props.getBoolean("enable.gossip", false);
         this.enableRebalanceService = props.getBoolean("enable.rebalancing", true);
-        this.enableRepair = props.getBoolean("enable.repair", true);
+        this.enableOrphanDataPurge = props.getBoolean("enable.orphan.data.purge", true);
         this.enablePruneJob = props.getBoolean("enable.prunejob", true);
         this.enableJmxClusterName = props.getBoolean("enable.jmx.clustername", false);
 
@@ -555,8 +555,8 @@ public class VoldemortConfig implements Serializable {
         this.maxHttpAggregatedContentLength = props.getInt("max.http.aggregated.content.length",
                                                            1048576);
 
-        this.repairJobMaxKeysScannedPerSec = props.getInt("repairjob.max.keys.scanned.per.sec",
-                                                          Integer.MAX_VALUE);
+        this.orphanDataPurgeJobMaxKeysScannedPerSec = props.getInt("orphan.data.purgejob.max.keys.scanned.per.sec",
+                                                                   Integer.MAX_VALUE);
         this.pruneJobMaxKeysScannedPerSec = props.getInt("prunejob.max.keys.scanned.per.sec",
                                                          Integer.MAX_VALUE);
 
@@ -2033,20 +2033,20 @@ public class VoldemortConfig implements Serializable {
         this.enableSlopPusherJob = enableSlopPusherJob;
     }
 
-    public boolean isRepairEnabled() {
-        return this.enableRepair;
+    public boolean isOrphanDataPurgeEnabled() {
+        return this.enableOrphanDataPurge;
     }
 
     /**
-     * Whether {@link RepairJob} will be enabled
+     * Whether {@link OrphanDataPurgeJob} will be enabled
      * 
      * <ul>
-     * <li>Property :"enable.repair"</li>
+     * <li>Property :"enable.orphan.data.purge"</li>
      * <li>Default :true</li>
      * </ul>
      */
-    public void setEnableRepair(boolean enableRepair) {
-        this.enableRepair = enableRepair;
+    public void setEnableOrphanDataPurge(boolean enableOrphanDataPurge) {
+        this.enableOrphanDataPurge = enableOrphanDataPurge;
     }
 
     public boolean isPruneJobEnabled() {
@@ -3060,20 +3060,20 @@ public class VoldemortConfig implements Serializable {
         this.maxHttpAggregatedContentLength = maxHttpAggregatedContentLength;
     }
 
-    public int getRepairJobMaxKeysScannedPerSec() {
-        return repairJobMaxKeysScannedPerSec;
+    public int getOrphanDataPurgeJobMaxKeysScannedPerSec() {
+        return orphanDataPurgeJobMaxKeysScannedPerSec;
     }
 
     /**
-     * Global throttle limit for repair jobs
+     * Global throttle limit for OrphanDataPurge jobs
      * 
      * <ul>
-     * <li>Property :"repairjob.max.keys.scanned.per.sec"</li>
+     * <li>Property :"orphan.data.purgejob.max.keys.scanned.per.sec"</li>
      * <li>Default : Integer.MAX_VALUE (unthrottled)</li>
      * </ul>
      */
-    public void setRepairJobMaxKeysScannedPerSec(int maxKeysPerSecond) {
-        this.repairJobMaxKeysScannedPerSec = maxKeysPerSecond;
+    public void setOrphanDataPurgeJobMaxKeysScannedPerSec(int maxKeysPerSecond) {
+        this.orphanDataPurgeJobMaxKeysScannedPerSec = maxKeysPerSecond;
     }
 
     public int getPruneJobMaxKeysScannedPerSec() {
@@ -3091,7 +3091,7 @@ public class VoldemortConfig implements Serializable {
     public void setPruneJobMaxKeysScannedPerSec(int maxKeysPerSecond) {
         this.pruneJobMaxKeysScannedPerSec = maxKeysPerSecond;
     }
-    
+
     /**
      * Kdc for kerberized Hadoop grids
      * 

@@ -48,8 +48,8 @@ import voldemort.server.protocol.RequestHandler;
 import voldemort.server.protocol.StreamRequestHandler;
 import voldemort.server.rebalance.Rebalancer;
 import voldemort.server.storage.StorageService;
+import voldemort.server.storage.orphandatapurge.OrphanDataPurgeJob;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
-import voldemort.server.storage.repairjob.RepairJob;
 import voldemort.store.ErrorCodeMapper;
 import voldemort.store.StorageEngine;
 import voldemort.store.StoreDefinition;
@@ -250,8 +250,9 @@ public class AdminServiceRequestHandler implements RequestHandler {
                 ProtoUtils.writeMessage(outputStream,
                                         handleDeleteStoreRebalanceState(request.getDeleteStoreRebalanceState()));
                 break;
-            case REPAIR_JOB:
-                ProtoUtils.writeMessage(outputStream, handleRepairJob(request.getRepairJob()));
+            case ORPHAN_DATA_PURGE_JOB:
+                ProtoUtils.writeMessage(outputStream,
+                                        handleOrphanDataPurgeJob(request.getOrphanDataPurgeJob()));
                 break;
             case PRUNE_JOB:
                 ProtoUtils.writeMessage(outputStream, handlePruneJob(request.getPruneJob()));
@@ -656,35 +657,37 @@ public class AdminServiceRequestHandler implements RequestHandler {
         return response.build();
     }
 
-    public VAdminProto.RepairJobResponse handleRepairJob(VAdminProto.RepairJobRequest request) {
-        VAdminProto.RepairJobResponse.Builder response = VAdminProto.RepairJobResponse.newBuilder();
+    public VAdminProto.OrphanDataPurgeJobResponse handleOrphanDataPurgeJob(VAdminProto.OrphanDataPurgeJobRequest request) {
+        VAdminProto.OrphanDataPurgeJobResponse.Builder response = VAdminProto.OrphanDataPurgeJobResponse.newBuilder();
         try {
             int requestId = asyncService.getUniqueRequestId();
-            asyncService.submitOperation(requestId, new AsyncOperation(requestId, "Repair Job") {
+            asyncService.submitOperation(requestId, new AsyncOperation(requestId,
+                                                                       "Orphan Data Purge Job") {
 
                 @Override
                 public void operate() {
-                    RepairJob job = storeRepository.getRepairJob();
+                    OrphanDataPurgeJob job = storeRepository.getOrphanDataPurgeJob();
                     if(job != null) {
                         if(job.getIsRunning().get()) {
-                            logger.info("Repair job already running .. backing off.. ");
+                            logger.info("Orphan Data Purge job already running .. backing off.. ");
                             return;
                         }
-                        logger.info("Starting the repair job now on ID : "
+                        logger.info("Starting the Orphan Data Purge job now on ID : "
                                     + metadataStore.getNodeId());
                         job.run();
                     } else
-                        logger.error("RepairJob is not initialized.");
+                        logger.error("Orphan Data Purge Job is not initialized.");
                 }
 
                 @Override
                 public void stop() {
-                    status.setException(new VoldemortException("Repair job interrupted"));
+                    status.setException(new VoldemortException("Orphan Data Purge job interrupted"));
                 }
             });
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
-            logger.error("Repair job failed for request : " + request.toString() + ")", e);
+            logger.error("Orphan Data Purge job failed for request : " + request.toString() + ")",
+                         e);
         }
         return response.build();
     }

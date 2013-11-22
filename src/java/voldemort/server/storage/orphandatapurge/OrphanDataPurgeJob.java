@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package voldemort.server.storage.repairjob;
+package voldemort.server.storage.orphandatapurge;
 
 import javax.management.MBeanOperationInfo;
 
@@ -34,21 +34,21 @@ import voldemort.utils.ByteArray;
  * This is a background job that should be run after successful rebalancing. The
  * job deletes all data that does not belong to the server.
  * 
- * FIXME VC RepairJob is a non intuitive name. Need to rename this.
- */
-public class RepairJob extends DataMaintenanceJob {
+ * 
+ **/
+public class OrphanDataPurgeJob extends DataMaintenanceJob {
 
-    private final static Logger logger = Logger.getLogger(RepairJob.class.getName());
+    private final static Logger logger = Logger.getLogger(OrphanDataPurgeJob.class.getName());
 
-    public RepairJob(StoreRepository storeRepo,
-                     MetadataStore metadataStore,
-                     ScanPermitWrapper repairPermits,
-                     int maxKeysScannedPerSecond) {
+    public OrphanDataPurgeJob(StoreRepository storeRepo,
+                                MetadataStore metadataStore,
+                                ScanPermitWrapper repairPermits,
+                                int maxKeysScannedPerSecond) {
         super(storeRepo, metadataStore, repairPermits, maxKeysScannedPerSecond);
     }
 
-    @JmxOperation(description = "Start the Repair Job thread", impact = MBeanOperationInfo.ACTION)
-    public void startRepairJob() {
+    @JmxOperation(description = "Start the Orphaned Data Purge Job thread", impact = MBeanOperationInfo.ACTION)
+    public void startOrphanDataPurgeJob() {
         run();
     }
 
@@ -59,7 +59,7 @@ public class RepairJob extends DataMaintenanceJob {
                 // Lets generate routing strategy for this storage engine
                 StoreRoutingPlan routingPlan = new StoreRoutingPlan(metadataStore.getCluster(),
                                                                     storeDef);
-                logger.info("Repairing store " + storeDef.getName());
+                logger.info("Purging store " + storeDef.getName() + " for orphaned data");
                 StorageEngine<ByteArray, byte[], byte[]> engine = storeRepo.getStorageEngine(storeDef.getName());
                 iterator = engine.keys();
 
@@ -95,7 +95,7 @@ public class RepairJob extends DataMaintenanceJob {
 
     @Override
     protected String getJobName() {
-        return "repair job";
+        return "orphaned data purge job";
     }
 
     @JmxGetter(name = "numKeysDeleted", description = "Returns number of keys deleted")
