@@ -40,6 +40,7 @@ import voldemort.client.protocol.pb.VAdminProto.RebalanceTaskInfoMap;
 import voldemort.client.protocol.pb.VAdminProto.VoldemortAdminRequest;
 import voldemort.client.rebalance.RebalanceTaskInfo;
 import voldemort.cluster.Cluster;
+import voldemort.cluster.Zone;
 import voldemort.common.nio.ByteBufferBackedInputStream;
 import voldemort.routing.StoreRoutingPlan;
 import voldemort.server.StoreRepository;
@@ -47,6 +48,7 @@ import voldemort.server.VoldemortConfig;
 import voldemort.server.protocol.RequestHandler;
 import voldemort.server.protocol.StreamRequestHandler;
 import voldemort.server.rebalance.Rebalancer;
+import voldemort.server.scheduler.slop.SlopPurgeJob;
 import voldemort.server.storage.StorageService;
 import voldemort.server.storage.prunejob.VersionedPutPruneJob;
 import voldemort.server.storage.repairjob.RepairJob;
@@ -255,6 +257,9 @@ public class AdminServiceRequestHandler implements RequestHandler {
                 break;
             case PRUNE_JOB:
                 ProtoUtils.writeMessage(outputStream, handlePruneJob(request.getPruneJob()));
+                break;
+            case SLOP_PURGE_JOB:
+                ProtoUtils.writeMessage(outputStream, handleSlopPurgeJob(request.getSlopPurgeJob()));
                 break;
             case NATIVE_BACKUP:
                 ProtoUtils.writeMessage(outputStream, handleNativeBackup(request.getNativeBackup()));
@@ -723,6 +728,47 @@ public class AdminServiceRequestHandler implements RequestHandler {
         } catch(VoldemortException e) {
             response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
             logger.error("Prune job failed for request : " + request.toString() + ")", e);
+        }
+        return response.build();
+    }
+
+    public VAdminProto.SlopPurgeJobResponse handleSlopPurgeJob(final VAdminProto.SlopPurgeJobRequest request) {
+        VAdminProto.SlopPurgeJobResponse.Builder response = VAdminProto.SlopPurgeJobResponse.newBuilder();
+        try {
+            int requestId = asyncService.getUniqueRequestId();
+
+            asyncService.submitOperation(requestId, new AsyncOperation(requestId, "SlopPurgeJob") {
+
+                @Override
+                public void operate() {
+                    SlopPurgeJob job = storeRepository.getSlopPurgeJob();
+
+                    if(job != null) {
+                        if(job.getIsRunning().get()) {
+                            logger.info(job.getJobName() + " already running .. backing off.. ");
+                            return;
+                        }
+                        logger.info("Starting the " + job.getJobName() + " now on node ID : "
+                                    + metadataStore.getNodeId());
+
+                        job.setFilter(request.getNodeIdsList(),
+                                      request.hasZoneId() ? request.getZoneId()
+                                                         : Zone.UNSET_ZONE_ID,
+                                      request.getStoreNamesList());
+                        job.run();
+                    } else {
+                        logger.error("SlopPurgeJob is not initialized.");
+                    }
+                }
+
+                @Override
+                public void stop() {
+                    status.setException(new VoldemortException("SlopPurgeJob interrupted"));
+                }
+            });
+        } catch(VoldemortException e) {
+            response.setError(ProtoUtils.encodeError(errorCodeMapper, e));
+            logger.error("Slop Purge Job failed for request : " + request.toString() + ")", e);
         }
         return response.build();
     }

@@ -336,7 +336,6 @@ public class AdminClient {
             AdminClient.this.cachedZoneID = zoneID;
         }
 
-
         private void cacheSystemStoreParams(String bootstrapURL) {
             String[] bootstrapUrls = new String[1];
             bootstrapUrls[0] = bootstrapURL;
@@ -393,6 +392,29 @@ public class AdminClient {
                 socket.close();
             } catch(IOException e) {
                 logger.warn("Failed to close socket");
+            }
+        }
+
+        // TODO move as many messages to use this helper.
+        private void sendAdminRequest(VAdminProto.VoldemortAdminRequest adminRequest,
+                                      int destinationNodeId) {
+            // TODO probably need a helper to do all this, at some point.. all
+            // of this file has repeated code
+            Node node = AdminClient.this.getAdminClientCluster().getNodeById(destinationNodeId);
+            SocketDestination destination = new SocketDestination(node.getHost(),
+                                                                  node.getAdminPort(),
+                                                                  RequestFormatType.ADMIN_PROTOCOL_BUFFERS);
+            SocketAndStreams sands = socketPool.checkout(destination);
+
+            try {
+                DataOutputStream outputStream = sands.getOutputStream();
+                ProtoUtils.writeMessage(outputStream, adminRequest);
+                outputStream.flush();
+            } catch(IOException e) {
+                helperOps.close(sands.getSocket());
+                throw new VoldemortException(e);
+            } finally {
+                socketPool.checkin(destination, sands);
             }
         }
 
@@ -1416,6 +1438,38 @@ public class AdminClient {
         public void pruneJob(int nodeId, List<String> stores) {
             for(String store: stores) {
                 pruneJob(nodeId, store);
+            }
+        }
+
+        public void slopPurgeJob(int destinationNodeId,
+                                 List<Integer> nodeList,
+                                 int zoneId,
+                                 List<String> storeNames) {
+            VAdminProto.SlopPurgeJobRequest.Builder jobRequest = VAdminProto.SlopPurgeJobRequest.newBuilder();
+            if(nodeList != null) {
+                jobRequest.addAllNodeIds(nodeList);
+            }
+            if(zoneId != Zone.UNSET_ZONE_ID) {
+                jobRequest.setZoneId(zoneId);
+            }
+            if(storeNames != null) {
+                jobRequest.addAllStoreNames(storeNames);
+            }
+
+            VAdminProto.VoldemortAdminRequest adminRequest = VAdminProto.VoldemortAdminRequest.newBuilder()
+                                                                                              .setSlopPurgeJob(jobRequest)
+                                                                                              .setType(VAdminProto.AdminRequestType.SLOP_PURGE_JOB)
+                                                                                              .build();
+            helperOps.sendAdminRequest(adminRequest, destinationNodeId);
+        }
+
+        public void slopPurgeJob(List<Integer> nodesToPurge,
+                                 int zoneToPurge,
+                                 List<String> storesToPurge) {
+            // Run this on all the nodes in the cluster
+            for(Node node: currentCluster.getNodes()) {
+                logger.info("Submitting SlopPurgeJob on node " + node.getId());
+                slopPurgeJob(node.getId(), nodesToPurge, zoneToPurge, storesToPurge);
             }
         }
 

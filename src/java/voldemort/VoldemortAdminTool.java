@@ -36,8 +36,15 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -58,6 +65,7 @@ import voldemort.client.protocol.admin.AdminClientConfig;
 import voldemort.client.protocol.admin.QueryKeyResult;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
+import voldemort.cluster.Zone;
 import voldemort.serialization.DefaultSerializerFactory;
 import voldemort.serialization.Serializer;
 import voldemort.serialization.SerializerDefinition;
@@ -136,6 +144,11 @@ public class VoldemortAdminTool {
               .withRequiredArg()
               .describedAs("output-directory")
               .ofType(String.class);
+        parser.accepts("nodes", "list of nodes")
+              .withRequiredArg()
+              .describedAs("nodes")
+              .withValuesSeparatedBy(',')
+              .ofType(Integer.class);
         parser.accepts("stores", "Store names")
               .withRequiredArg()
               .describedAs("store-names")
@@ -211,6 +224,8 @@ public class VoldemortAdminTool {
               .ofType(Integer.class);
         parser.accepts("repair-job", "Clean after rebalancing is done");
         parser.accepts("prune-job", "Prune versioned put data, after rebalancing");
+        parser.accepts("purge-slops",
+                       "Purge the slop stores selectively, based on nodeId or zoneId");
         parser.accepts("native-backup", "Perform a native backup")
               .withRequiredArg()
               .describedAs("store-name")
@@ -280,151 +295,93 @@ public class VoldemortAdminTool {
                      || options.has("get-metadata") || options.has("check-metadata"))
                  || options.has("truncate") || options.has("clear-rebalancing-metadata")
                  || options.has("async") || options.has("native-backup") || options.has("rollback")
-                 || options.has("verify-metadata-version") || options.has("reserve-memory"))) {
+                 || options.has("verify-metadata-version") || options.has("reserve-memory") || options.has("purge-slops"))) {
                 System.err.println("Missing required arguments: " + Joiner.on(", ").join(missing));
                 printHelp(System.err, parser);
                 System.exit(1);
             }
         }
 
-        String url = (String) options.valueOf("url");
-        Integer nodeId = CmdUtils.valueOf(options, "node", -1);
-        int parallelism = CmdUtils.valueOf(options, "restore", 5);
-        Integer zoneId = CmdUtils.valueOf(options, "zone", -1);
-
-        int zone = zoneId == -1 ? 0 : zoneId;
-        AdminClient adminClient = new AdminClient(url,
-                                                  new AdminClientConfig(),
-                                                  new ClientConfig(),
-                                                  zone);
-
-        if(options.has("verify-metadata-version")) {
-            checkMetadataVersion(adminClient);
-            return;
-        }
-
-        String ops = "";
-        // Honestly, the most insane code I have seen. Atleast sorting this for
-        // now so its easy to find a spare character
-        // TODO rid the code of this horror?
-        if(options.has("add-stores")) {
-            ops += "a";
-        }
-        if(options.has("async")) {
-            ops += "b";
-        }
-        if(options.has("check-metadata")) {
-            ops += "c";
-        }
-        if(options.has("delete-partitions")) {
-            ops += "d";
-        }
-        if(options.has("ro-metadata")) {
-            ops += "e";
-        }
-        if(options.has("reserve-memory")) {
-            if(!options.has("stores")) {
-                Utils.croak("Specify the list of stores to reserve memory");
-            }
-            ops += "f";
-        }
-        if(options.has("get-metadata")) {
-            ops += "g";
-        }
-        if(options.has("mirror-from-url")) {
-            if(!options.has("mirror-node")) {
-                Utils.croak("Specify the mirror node to fetch from");
-            }
-            ops += "h";
-        }
-        if(options.has("clear-rebalancing-metadata")) {
-            ops += "i";
-        }
-
-        if(options.has("prune-job")) {
-            ops += "j";
-        }
-
-        if(options.has("fetch-keys")) {
-            ops += "k";
-        }
-
-        if(options.has("repair-job")) {
-            ops += "l";
-        }
-        if(options.has("set-metadata")) {
-            ops += "m";
-        }
-        if(options.has("native-backup")) {
-            if(!options.has("backup-dir")) {
-                Utils.croak("A backup directory must be specified with backup-dir option");
-            }
-            ops += "n";
-        }
-        if(options.has("rollback")) {
-            if(!options.has("version")) {
-                Utils.croak("A read-only push version must be specified with rollback option");
-            }
-            ops += "o";
-        }
-        if(options.has("query-key")) {
-            ops += "q";
-        }
-        if(options.has("restore")) {
-            ops += "r";
-        }
-        if(options.has("delete-store")) {
-            ops += "s";
-        }
-
-        if(options.has("truncate")) {
-            ops += "t";
-        }
-        if(options.has("update-entries")) {
-            ops += "u";
-        }
-        if(options.has("fetch-entries")) {
-            ops += "v";
-        }
-
-        if(options.has("synchronize-metadata-version")) {
-            ops += "z";
-        }
-        if(ops.length() < 1) {
-            Utils.croak("At least one of (delete-partitions, restore, add-node, fetch-entries, "
-                        + "fetch-keys, add-stores, delete-store, update-entries, get-metadata, ro-metadata, "
-                        + "set-metadata, check-metadata, clear-rebalancing-metadata, async, "
-                        + "repair-job, native-backup, rollback, reserve-memory, mirror-url, verify-metadata-version, prune-job) must be specified");
-        }
-
-        List<String> storeNames = null;
-
-        if(options.has("stores")) {
-            storeNames = (List<String>) options.valuesOf("stores");
-        }
-
-        String outputDir = null;
-        if(options.has("outdir")) {
-            outputDir = (String) options.valueOf("outdir");
-        }
-
         try {
-            if(ops.contains("d")) {
+            String url = (String) options.valueOf("url");
+            Integer nodeId = CmdUtils.valueOf(options, "node", -1);
+            int parallelism = CmdUtils.valueOf(options, "restore", 5);
+            Integer zoneId = CmdUtils.valueOf(options, "zone", -1);
+
+            int zone = zoneId == Zone.UNSET_ZONE_ID ? 0 : zoneId;
+            AdminClient adminClient = new AdminClient(url,
+                                                      new AdminClientConfig(),
+                                                      new ClientConfig(),
+                                                      zone);
+
+            List<String> storeNames = null;
+            if(options.has("stores")) {
+                storeNames = (List<String>) options.valuesOf("stores");
+            }
+
+            String outputDir = null;
+            if(options.has("outdir")) {
+                outputDir = (String) options.valueOf("outdir");
+            }
+
+            if(options.has("add-stores")) {
+                String storesXml = (String) options.valueOf("add-stores");
+                executeAddStores(adminClient, storesXml, nodeId);
+            } else if(options.has("async")) {
+                String asyncKey = (String) options.valueOf("async");
+                List<Integer> asyncIds = null;
+                if(options.hasArgument("async-id"))
+                    asyncIds = (List<Integer>) options.valuesOf("async-id");
+                executeAsync(nodeId, adminClient, asyncKey, asyncIds);
+            } else if(options.has("check-metadata")) {
+                String metadataKey = (String) options.valueOf("check-metadata");
+                executeCheckMetadata(adminClient, metadataKey);
+            } else if(options.has("delete-partitions")) {
                 System.out.println("Starting delete-partitions");
                 List<Integer> partitionIdList = (List<Integer>) options.valuesOf("delete-partitions");
                 executeDeletePartitions(nodeId, adminClient, partitionIdList, storeNames);
                 System.out.println("Finished delete-partitions");
-            }
-            if(ops.contains("r")) {
+            } else if(options.has("ro-metadata")) {
+                String type = (String) options.valueOf("ro-metadata");
+                executeROMetadata(nodeId, adminClient, storeNames, type);
+            } else if(options.has("reserve-memory")) {
+                if(!options.has("stores")) {
+                    Utils.croak("Specify the list of stores to reserve memory");
+                }
+                long reserveMB = (Long) options.valueOf("reserve-memory");
+                adminClient.storeMntOps.reserveMemory(nodeId, storeNames, reserveMB);
+            } else if(options.has("get-metadata")) {
+                String metadataKey = ALL_METADATA;
+                if(options.hasArgument("get-metadata")) {
+                    metadataKey = (String) options.valueOf("get-metadata");
+                }
+                executeGetMetadata(nodeId, adminClient, metadataKey, outputDir);
+            } else if(options.has("mirror-from-url")) {
+                if(!options.has("mirror-node")) {
+                    Utils.croak("Specify the mirror node to fetch from");
+                }
+
                 if(nodeId == -1) {
-                    System.err.println("Cannot run restore without node id");
+                    System.err.println("Cannot run mirroring without node id");
                     System.exit(1);
                 }
-                System.out.println("Starting restore");
-                adminClient.restoreOps.restoreDataFromReplications(nodeId, parallelism, zoneId);
-                System.out.println("Finished restore");
-            }
-            if(ops.contains("k")) {
+                Integer mirrorNodeId = CmdUtils.valueOf(options, "mirror-node", -1);
+                if(mirrorNodeId == -1) {
+                    System.err.println("Cannot run mirroring without mirror node id");
+                    System.exit(1);
+                }
+                adminClient.restoreOps.mirrorData(nodeId,
+                                                  mirrorNodeId,
+                                                  (String) options.valueOf("mirror-from-url"),
+                                                  storeNames);
+            } else if(options.has("clear-rebalancing-metadata")) {
+                executeClearRebalancing(nodeId, adminClient);
+            } else if(options.has("prune-job")) {
+                if(storeNames == null) {
+                    Utils.croak("Must specify --stores to run the prune job");
+                }
+                executePruneJob(nodeId, adminClient, storeNames);
+            } else if(options.has("fetch-keys")) {
                 boolean useAscii = options.has("ascii");
                 System.out.println("Starting fetch keys");
                 List<Integer> partitionIdList = null;
@@ -437,54 +394,10 @@ public class VoldemortAdminTool {
                                  storeNames,
                                  useAscii,
                                  options.has("fetch-orphaned"));
-            }
-            if(ops.contains("v")) {
-                boolean useAscii = options.has("ascii");
-                System.out.println("Starting fetch entries");
-                List<Integer> partitionIdList = null;
-                if(options.hasArgument("fetch-entries"))
-                    partitionIdList = (List<Integer>) options.valuesOf("fetch-entries");
-                executeFetchEntries(nodeId,
-                                    adminClient,
-                                    partitionIdList,
-                                    outputDir,
-                                    storeNames,
-                                    useAscii,
-                                    options.has("fetch-orphaned"));
-            }
+            } else if(options.has("repair-job")) {
+                executeRepairJob(nodeId, adminClient);
+            } else if(options.has("set-metadata")) {
 
-            if(ops.contains("a")) {
-                String storesXml = (String) options.valueOf("add-stores");
-                executeAddStores(adminClient, storesXml, nodeId);
-            }
-            if(ops.contains("u")) {
-                String inputDir = (String) options.valueOf("update-entries");
-                executeUpdateEntries(nodeId, adminClient, storeNames, inputDir);
-            }
-            if(ops.contains("s")) {
-                String storeName = (String) options.valueOf("delete-store");
-                executeDeleteStore(adminClient, storeName, nodeId);
-            }
-            if(ops.contains("g")) {
-                String metadataKey = ALL_METADATA;
-                if(options.hasArgument("get-metadata")) {
-                    metadataKey = (String) options.valueOf("get-metadata");
-                }
-                executeGetMetadata(nodeId, adminClient, metadataKey, outputDir);
-            }
-            if(ops.contains("e")) {
-                String type = (String) options.valueOf("ro-metadata");
-                executeROMetadata(nodeId, adminClient, storeNames, type);
-            }
-            if(ops.contains("t")) {
-                String storeName = (String) options.valueOf("truncate");
-                executeTruncateStore(nodeId, adminClient, storeName);
-            }
-            if(ops.contains("c")) {
-                String metadataKey = (String) options.valueOf("check-metadata");
-                executeCheckMetadata(adminClient, metadataKey);
-            }
-            if(ops.contains("m")) {
                 String metadataKey = (String) options.valueOf("set-metadata");
                 if(!options.has("set-metadata-value")) {
                     throw new VoldemortException("Missing set-metadata-value");
@@ -565,30 +478,11 @@ public class VoldemortAdminTool {
                         throw new VoldemortException("Incorrect metadata key");
                     }
                 }
-
-            }
-            if(ops.contains("i")) {
-                executeClearRebalancing(nodeId, adminClient);
-            }
-            if(ops.contains("b")) {
-                String asyncKey = (String) options.valueOf("async");
-                List<Integer> asyncIds = null;
-                if(options.hasArgument("async-id"))
-                    asyncIds = (List<Integer>) options.valuesOf("async-id");
-                executeAsync(nodeId, adminClient, asyncKey, asyncIds);
-            }
-            if(ops.contains("l")) {
-                executeRepairJob(nodeId, adminClient);
-            }
-
-            if(ops.contains("j")) {
-                if(storeNames == null) {
-                    Utils.croak("Must specify --stores to run the prune job");
+            } else if(options.has("native-backup")) {
+                if(!options.has("backup-dir")) {
+                    Utils.croak("A backup directory must be specified with backup-dir option");
                 }
-                executePruneJob(nodeId, adminClient, storeNames);
-            }
 
-            if(ops.contains("n")) {
                 String backupDir = (String) options.valueOf("backup-dir");
                 String storeName = (String) options.valueOf("native-backup");
                 int timeout = CmdUtils.valueOf(options, "backup-timeout", 30);
@@ -598,40 +492,68 @@ public class VoldemortAdminTool {
                                                      timeout,
                                                      options.has("backup-verify"),
                                                      options.has("backup-incremental"));
-            }
-            if(ops.contains("o")) {
+            } else if(options.has("rollback")) {
+                if(!options.has("version")) {
+                    Utils.croak("A read-only push version must be specified with rollback option");
+                }
                 String storeName = (String) options.valueOf("rollback");
                 long pushVersion = (Long) options.valueOf("version");
                 executeRollback(nodeId, storeName, pushVersion, adminClient);
-            }
-            if(ops.contains("z")) {
-                synchronizeMetadataVersion(adminClient, nodeId);
-            }
-            if(ops.contains("f")) {
-                long reserveMB = (Long) options.valueOf("reserve-memory");
-                adminClient.storeMntOps.reserveMemory(nodeId, storeNames, reserveMB);
-            }
-            if(ops.contains("q")) {
+            } else if(options.has("query-keys")) {
                 String key = (String) options.valueOf("query-key");
                 if(storeNames == null || storeNames.size() == 0) {
                     throw new VoldemortException("Must specify store name using --stores option");
                 }
                 executeQueryKey(nodeId, adminClient, storeNames, key, options.has("ascii"));
-            }
-            if(ops.contains("h")) {
+            } else if(options.has("restore")) {
                 if(nodeId == -1) {
-                    System.err.println("Cannot run mirroring without node id");
+                    System.err.println("Cannot run restore without node id");
                     System.exit(1);
                 }
-                Integer mirrorNodeId = CmdUtils.valueOf(options, "mirror-node", -1);
-                if(mirrorNodeId == -1) {
-                    System.err.println("Cannot run mirroring without mirror node id");
-                    System.exit(1);
+                System.out.println("Starting restore");
+                adminClient.restoreOps.restoreDataFromReplications(nodeId, parallelism, zoneId);
+                System.out.println("Finished restore");
+            } else if(options.has("delete-store")) {
+                String storeName = (String) options.valueOf("delete-store");
+                executeDeleteStore(adminClient, storeName, nodeId);
+            } else if(options.has("truncate")) {
+                String storeName = (String) options.valueOf("truncate");
+                executeTruncateStore(nodeId, adminClient, storeName);
+            } else if(options.has("update-entries")) {
+                String inputDir = (String) options.valueOf("update-entries");
+                executeUpdateEntries(nodeId, adminClient, storeNames, inputDir);
+            } else if(options.has("fetch-entries")) {
+                boolean useAscii = options.has("ascii");
+                System.out.println("Starting fetch entries");
+                List<Integer> partitionIdList = null;
+                if(options.hasArgument("fetch-entries"))
+                    partitionIdList = (List<Integer>) options.valuesOf("fetch-entries");
+                executeFetchEntries(nodeId,
+                                    adminClient,
+                                    partitionIdList,
+                                    outputDir,
+                                    storeNames,
+                                    useAscii,
+                                    options.has("fetch-orphaned"));
+            } else if(options.has("purge-slops")) {
+                List<Integer> nodesToPurge = null;
+                if(options.has("nodes")) {
+                    nodesToPurge = (List<Integer>) options.valuesOf("nodes");
                 }
-                adminClient.restoreOps.mirrorData(nodeId,
-                                                  mirrorNodeId,
-                                                  (String) options.valueOf("mirror-from-url"),
-                                                  storeNames);
+                if(nodesToPurge == null && zoneId == -1 && storeNames == null) {
+                    Utils.croak("Must specify atleast one of --nodes, --zone-id or --stores with --purge-slops");
+                }
+                executePurgeSlops(adminClient, nodesToPurge, zoneId, storeNames);
+            } else if(options.has("synchronize-metadata-version")) {
+                synchronizeMetadataVersion(adminClient, nodeId);
+            } else if(options.has("verify-metadata-version")) {
+                checkMetadataVersion(adminClient);
+            } else {
+                Utils.croak("At least one of (delete-partitions, restore, add-node, fetch-entries, "
+                            + "fetch-keys, add-stores, delete-store, update-entries, get-metadata, ro-metadata, "
+                            + "set-metadata, check-metadata, clear-rebalancing-metadata, async, "
+                            + "repair-job, native-backup, rollback, reserve-memory, mirror-url,"
+                            + " verify-metadata-version, prune-job, purge-slops) must be specified");
             }
         } catch(Exception e) {
             e.printStackTrace();
@@ -759,6 +681,13 @@ public class VoldemortAdminTool {
         }
     }
 
+    private static void executePurgeSlops(AdminClient adminClient,
+                                          List<Integer> nodesToPurge,
+                                          Integer zoneToPurge,
+                                          List<String> storesToPurge) {
+        adminClient.storeMntOps.slopPurgeJob(nodesToPurge, zoneToPurge, storesToPurge);
+    }
+
     public static void printHelp(PrintStream stream, OptionParser parser) throws IOException {
         stream.println("Commands supported");
         stream.println("------------------");
@@ -880,6 +809,8 @@ public class VoldemortAdminTool {
         stream.println("\t\t./bin/voldemort-admin-tool.sh --rollback [store-name] --url [url] --node [node-id] --version [version-num] ");
         stream.println("\t7) Prune data resulting from versioned puts, during rebalancing");
         stream.println("\t\t./bin/voldemort-admin-tool.sh --prune-job --url [url] --node [node-id] --stores [stores_list]");
+        stream.println("\t8) Purge slops based on criteria");
+        stream.println("\t\t./bin/voldemort-admin-tool.sh --purge-slops --url [url] --nodes [destination-nodes-list] --stores [stores_list] --zone [destination-zone]");
 
         parser.printHelpOn(stream);
     }
@@ -1633,7 +1564,7 @@ public class VoldemortAdminTool {
                                         String keyString,
                                         boolean useAscii) throws IOException {
         List<StoreDefinition> storeDefinitionList = adminClient.metadataMgmtOps.getRemoteStoreDefList(nodeId)
-                .getValue();
+                                                                               .getValue();
         Map<String, StoreDefinition> storeDefinitions = new HashMap<String, StoreDefinition>();
         for(StoreDefinition storeDef: storeDefinitionList) {
             storeDefinitions.put(storeDef.getName(), storeDef);
@@ -1651,7 +1582,8 @@ public class VoldemortAdminTool {
             @SuppressWarnings("unchecked")
             final Serializer<Object> valueSerializer = (Serializer<Object>) serializerFactory.getSerializer(valueSerializerDef);
 
-            // although the streamingOps support multiple keys, we only query on key here
+            // although the streamingOps support multiple keys, we only query on
+            // key here
             List<ByteArray> listKeys = new ArrayList<ByteArray>();
             try {
                 if(useAscii) {
@@ -1662,7 +1594,7 @@ public class VoldemortAdminTool {
                         JsonDecoder decoder = new JsonDecoder(keySchema, keyString);
                         GenericDatumReader<Object> datumReader = new GenericDatumReader<Object>(keySchema);
                         keyObject = datumReader.read(null, decoder);
-                    } else if (keySerializerName.equals(DefaultSerializerFactory.JSON_SERIALIZER_TYPE_NAME)){
+                    } else if(keySerializerName.equals(DefaultSerializerFactory.JSON_SERIALIZER_TYPE_NAME)) {
                         JsonReader jsonReader = new JsonReader(new StringReader(keyString));
                         keyObject = jsonReader.read();
                     } else {
@@ -1715,7 +1647,6 @@ public class VoldemortAdminTool {
                         Object keyObject = keySerializer.toObject((null == keyCompressionStrategy) ? keyBytes
                                                                                                   : keyCompressionStrategy.inflate(keyBytes));
 
-
                         // iterate through, unserialize and write values
                         if(queryKeyResult.hasValues() && queryKeyResult.getValues().size() > 0) {
                             for(Versioned<byte[]> versioned: queryKeyResult.getValues()) {
@@ -1728,11 +1659,12 @@ public class VoldemortAdminTool {
                                 }
                                 // write version
                                 VectorClock version = (VectorClock) versioned.getVersion();
-                                out.write(' ' + version.toString() + '[' + new Date(version.getTimestamp()).toString() + ']');
+                                out.write(' ' + version.toString() + '['
+                                          + new Date(version.getTimestamp()).toString() + ']');
                                 // write value
                                 byte[] valueBytes = versioned.getValue();
                                 Object valueObject = valueSerializer.toObject((null == valueCompressionStrategy) ? valueBytes
-                                        : valueCompressionStrategy.inflate(valueBytes));
+                                                                                                                : valueCompressionStrategy.inflate(valueBytes));
                                 if(valueObject instanceof GenericRecord) {
                                     out.write(valueObject.toString());
                                 } else {
@@ -1763,9 +1695,9 @@ public class VoldemortAdminTool {
 
     private static boolean isAvroSchema(String serializerName) {
         if(serializerName.equals(DefaultSerializerFactory.AVRO_GENERIC_VERSIONED_TYPE_NAME)
-                || serializerName.equals(DefaultSerializerFactory.AVRO_GENERIC_TYPE_NAME)
-                || serializerName.equals(DefaultSerializerFactory.AVRO_REFLECTIVE_TYPE_NAME)
-                || serializerName.equals(DefaultSerializerFactory.AVRO_SPECIFIC_TYPE_NAME)) {
+           || serializerName.equals(DefaultSerializerFactory.AVRO_GENERIC_TYPE_NAME)
+           || serializerName.equals(DefaultSerializerFactory.AVRO_REFLECTIVE_TYPE_NAME)
+           || serializerName.equals(DefaultSerializerFactory.AVRO_SPECIFIC_TYPE_NAME)) {
             return true;
         } else {
             return false;
