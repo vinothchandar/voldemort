@@ -66,6 +66,8 @@ import voldemort.client.protocol.admin.QueryKeyResult;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
 import voldemort.cluster.Zone;
+import voldemort.routing.BaseStoreRoutingPlan;
+import voldemort.routing.StoreRoutingPlan;
 import voldemort.serialization.DefaultSerializerFactory;
 import voldemort.serialization.Serializer;
 import voldemort.serialization.SerializerDefinition;
@@ -86,6 +88,7 @@ import voldemort.utils.ByteUtils;
 import voldemort.utils.CmdUtils;
 import voldemort.utils.MetadataVersionStoreUtils;
 import voldemort.utils.Pair;
+import voldemort.utils.StoreDefinitionUtils;
 import voldemort.utils.Utils;
 import voldemort.versioning.VectorClock;
 import voldemort.versioning.Versioned;
@@ -267,6 +270,11 @@ public class VoldemortAdminTool {
               .withRequiredArg()
               .describedAs("query-key")
               .ofType(String.class);
+        parser.accepts("show-routing-plan", "Routing plan of the specified keys")
+              .withRequiredArg()
+              .describedAs("keys-to-be-routed")
+              .withValuesSeparatedBy(',')
+              .ofType(String.class);
         parser.accepts("mirror-from-url", "Cluster url to mirror data from")
               .withRequiredArg()
               .describedAs("mirror-cluster-bootstrap-url")
@@ -295,7 +303,8 @@ public class VoldemortAdminTool {
                      || options.has("get-metadata") || options.has("check-metadata"))
                  || options.has("truncate") || options.has("clear-rebalancing-metadata")
                  || options.has("async") || options.has("native-backup") || options.has("rollback")
-                 || options.has("verify-metadata-version") || options.has("reserve-memory") || options.has("purge-slops"))) {
+                 || options.has("verify-metadata-version") || options.has("reserve-memory")
+                 || options.has("purge-slops") || options.has("show-routing-plan"))) {
                 System.err.println("Missing required arguments: " + Joiner.on(", ").join(missing));
                 printHelp(System.err, parser);
                 System.exit(1);
@@ -548,7 +557,19 @@ public class VoldemortAdminTool {
                 synchronizeMetadataVersion(adminClient, nodeId);
             } else if(options.has("verify-metadata-version")) {
                 checkMetadataVersion(adminClient);
+            } else if(options.has("show-routing-plan")) {
+                if(!options.has("store")) {
+                    Utils.croak("Must specify the store the keys belong to using --store ");
+                }
+                String storeName = (String) options.valueOf("store");
+                List<String> keysToRoute = (List<String>) options.valuesOf("show-routing-plan");
+                if(keysToRoute == null || keysToRoute.size() == 0) {
+                    Utils.croak("Must specify comma separated keys list in hex format");
+                }
+                executeShowRoutingPlan(adminClient, storeName, keysToRoute);
+
             } else {
+
                 Utils.croak("At least one of (delete-partitions, restore, add-node, fetch-entries, "
                             + "fetch-keys, add-stores, delete-store, update-entries, get-metadata, ro-metadata, "
                             + "set-metadata, check-metadata, clear-rebalancing-metadata, async, "
@@ -1254,14 +1275,15 @@ public class VoldemortAdminTool {
                         while(entriesIterator.hasNext()) {
                             Pair<ByteArray, Versioned<byte[]>> kvPair = entriesIterator.next();
                             byte[] keyBytes = kvPair.getFirst().get();
-                            byte[] versionBytes = ((VectorClock) kvPair.getSecond().getVersion()).toBytes();
+                            VectorClock clock = ((VectorClock) kvPair.getSecond().getVersion());
                             byte[] valueBytes = kvPair.getSecond().getValue();
-                            out.writeInt(keyBytes.length);
-                            out.write(keyBytes);
-                            out.writeInt(versionBytes.length);
-                            out.write(versionBytes);
-                            out.writeInt(valueBytes.length);
-                            out.write(valueBytes);
+
+                            out.writeChars(ByteUtils.toHexString(keyBytes));
+                            out.writeChars(",");
+                            out.writeChars(clock.toString());
+                            out.writeChars(",");
+                            out.writeChars(ByteUtils.toHexString(valueBytes));
+                            out.writeChars("\n");
                         }
                     }
                 });
@@ -1473,8 +1495,7 @@ public class VoldemortAdminTool {
                     public void printTo(DataOutputStream out) throws IOException {
                         while(keyIterator.hasNext()) {
                             byte[] keyBytes = keyIterator.next().get();
-                            out.writeInt(keyBytes.length);
-                            out.write(keyBytes);
+                            out.writeChars(ByteUtils.toHexString(keyBytes) + "\n");
                         }
                     }
                 });
@@ -1690,6 +1711,59 @@ public class VoldemortAdminTool {
                     }
                 }
             });
+        }
+    }
+
+    private static void executeShowRoutingPlan(AdminClient adminClient,
+                                               String storeName,
+                                               List<String> keyList) throws DecoderException {
+
+        Cluster cluster = adminClient.getAdminClientCluster();
+        List<StoreDefinition> storeDefs = adminClient.metadataMgmtOps.getRemoteStoreDefList(0)
+                                                                     .getValue();
+        StoreDefinition storeDef = StoreDefinitionUtils.getStoreDefinitionWithName(storeDefs,
+                                                                                   storeName);
+        StoreRoutingPlan routingPlan = new StoreRoutingPlan(cluster, storeDef);
+        BaseStoreRoutingPlan bRoutingPlan = new BaseStoreRoutingPlan(cluster, storeDef);
+
+        for(String keyStr: keyList) {
+            byte[] key = ByteUtils.fromHexString(keyStr);
+            System.out.println("Key :" + keyStr);
+            System.out.println("Replicating Partitions :"
+                               + routingPlan.getReplicatingPartitionList(key));
+            System.out.println("Replicating Nodes :");
+            List<Integer> nodeList = routingPlan.getReplicationNodeList(routingPlan.getMasterPartitionId(key));
+            for(int i = 0; i < nodeList.size(); i++) {
+                System.out.println(nodeList.get(i) + "\t"
+                                   + cluster.getNodeById(nodeList.get(i)).getHost());
+            }
+
+            System.out.println("Zone Nary information :");
+            HashMap<Integer, Integer> zoneRepMap = storeDef.getZoneReplicationFactor();
+
+            for(Zone zone: cluster.getZones()) {
+                System.out.println("\tZone #" + zone.getId());
+                int numReplicas = -1;
+                if(zoneRepMap == null) {
+                    // non zoned cluster
+                    numReplicas = storeDef.getReplicationFactor();
+                } else {
+                    // zoned cluster
+                    if(!zoneRepMap.containsKey(zone.getId())) {
+                        Utils.croak("Repfactor for Zone " + zone.getId() + " not found in storedef");
+                    }
+                    numReplicas = zoneRepMap.get(zone.getId());
+                }
+
+                for(int i = 0; i < numReplicas; i++) {
+                    System.out.println("\tReplica " + i + " Node "
+                                       + bRoutingPlan.getNodeIdForZoneNary(zone.getId(), i, key));
+                }
+                System.out.println();
+            }
+
+            System.out.println("-----------------------------------------------");
+            System.out.println();
         }
     }
 
